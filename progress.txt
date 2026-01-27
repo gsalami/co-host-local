@@ -102,3 +102,24 @@ Started: Tue Jan 27 14:13:30 CET 2026
   - Production mode runs on single port from .env (default 5000) via npm start
   - TypeScript errors in server/replit_integrations/* are expected and will be cleaned in ARCH-6
 ---
+## 2026-01-27 23:30 - ARCH-6
+- What was implemented: Removed all Replit-specific code, configurations, and dependencies from the codebase
+- Files changed:
+  - Deleted: server/replit_integrations/* (entire folder - batch and image integration modules)
+  - Deleted: vite-plugin-meta-images.ts (Replit domain-specific Vite plugin for OpenGraph images)
+  - Modified: vite.config.ts (removed @replit/vite-plugin-cartographer, dev-banner, runtime-error-modal imports and plugin usage)
+  - Modified: package.json (removed 3 @replit devDependencies)
+  - Modified: client/index.html (updated og:image and twitter:image to use relative paths instead of replit.com URLs, removed twitter:site @replit)
+  - Modified: client/src/components/ui/button.tsx (removed @replit design decision comments)
+  - Modified: client/src/components/ui/badge.tsx (removed @replit design decision comments)
+  - Modified: shared/schema.ts (updated comment from "Replit Auth" to just "auth")
+- **Learnings for future iterations:**
+  - Replit artifacts were scattered across multiple layers: server integrations, Vite plugins, meta tags, package dependencies, and code comments
+  - The replit_integrations folder contained batch processing utils and image generation routes (282 lines total) - no longer needed for local deployment
+  - vite-plugin-meta-images.ts was a custom plugin that rewrote OpenGraph meta tags based on REPLIT_INTERNAL_APP_DOMAIN and REPLIT_DEV_DOMAIN env vars
+  - Three Vite plugins were removed: cartographer (code mapping), dev-banner (dev environment banner), runtime-error-modal (error overlay)
+  - After cleanup: 399 lines of code removed, app builds and typechecks successfully
+  - The codebase is now fully local and no longer requires any Replit-specific environment variables or infrastructure
+  - Design comments (@replit) were useful context but tied to the old platform - removed for clarity
+  - No .replit config file existed (likely already removed or never committed)
+---

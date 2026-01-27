@@ -44,7 +44,7 @@
       "title": "Clean up Replit artifacts and unused code",
       "description": "Remove all Replit-specific code, configurations, and references. Remove replit_integrations folder, .replit references, vite replit plugins. Clean up package.json dependencies. Ensure the app starts cleanly with npm run dev.",
       "priority": 6,
-      "passes": false
+      "passes": true
     }
   ]
 }

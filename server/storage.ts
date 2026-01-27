@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { 
-  type User, 
-  type UpsertUser, 
+import {
+  type User,
+  type UpsertUser,
   type TranscriptSegment,
   type InsertTranscriptSegment,
   type Show,
@@ -20,12 +20,6 @@ import {
   type InsertTranscriptChunk,
   type SourceChunk,
   type InsertSourceChunk,
-  type UsageRecord,
-  type InsertUsageRecord,
-  type UserCredits,
-  type InsertUserCredits,
-  type CreditPurchase,
-  type InsertCreditPurchase,
   type QuickAction,
   type InsertQuickAction,
   type UserQuickActionSelection,
@@ -39,9 +33,6 @@ import {
   showSummaries,
   transcriptChunks,
   sourceChunks,
-  usageRecords,
-  userCredits,
-  creditPurchases,
   quickActions,
   userQuickActionSelections
 } from "@shared/schema";
@@ -111,36 +102,13 @@ export interface IStorage {
   createSourceChunk(chunk: InsertSourceChunk): Promise<SourceChunk>;
   deleteSourceChunks(sourceId: number): Promise<void>;
   updateSourceChunkEmbedding(chunkId: number, embedding: string): Promise<void>;
-  
-  // Usage Record methods
-  createUsageRecord(record: InsertUsageRecord): Promise<UsageRecord>;
-  getUsageRecords(): Promise<UsageRecord[]>;
-  getUsageStats(showId?: number | null): Promise<{ transcriptSeconds: number; voiceSeconds: number; voiceInSeconds: number; voiceOutSeconds: number }>;
-  getUsageByDay(days: number, showId?: number | null): Promise<Array<{ date: string; transcriptSeconds: number; voiceSeconds: number; voiceInSeconds: number; voiceOutSeconds: number }>>;
-  getUsageByShow(days: number): Promise<Array<{ showId: number | null; showTitle: string | null; transcriptSeconds: number; voiceSeconds: number; voiceInSeconds: number; voiceOutSeconds: number }>>;
-  
+
   // Admin methods
   getAllUsers(): Promise<User[]>;
   updateUserRole(userId: string, role: string): Promise<User | undefined>;
-  getUsageStatsByUser(): Promise<Array<{ userId: string | null; email: string | null; firstName: string | null; lastName: string | null; transcriptSeconds: number; voiceSeconds: number }>>;
-  getUsageByUser(days: number): Promise<Array<{ userId: string | null; email: string | null; firstName: string | null; lastName: string | null; date: string; transcriptSeconds: number; voiceSeconds: number }>>;
-  
+
   // User preferences
   updateVoicePreference(userId: string, voicePreference: string): Promise<User | undefined>;
-  
-  // User Credits methods
-  getUserCredits(userId: string): Promise<UserCredits | undefined>;
-  createUserCredits(userId: string, transcriptSeconds?: number, voiceSeconds?: number): Promise<UserCredits>;
-  addCredits(userId: string, transcriptSeconds: number, voiceSeconds: number): Promise<UserCredits>;
-  deductCredits(userId: string, transcriptSeconds: number, voiceSeconds: number): Promise<UserCredits | null>;
-  
-  // Credit Purchase methods
-  createCreditPurchase(purchase: InsertCreditPurchase): Promise<CreditPurchase>;
-  getCreditPurchase(stripeSessionId: string): Promise<CreditPurchase | undefined>;
-  updateCreditPurchaseStatus(stripeSessionId: string, status: string, paymentIntentId?: string): Promise<CreditPurchase | undefined>;
-  getUserCreditPurchases(userId: string): Promise<CreditPurchase[]>;
-  getAllCreditPurchases(): Promise<CreditPurchase[]>;
-  updateCreditPurchaseStatusById(purchaseId: number, status: string): Promise<CreditPurchase | undefined>;
   
   // Quick Action methods
   getAllQuickActions(): Promise<QuickAction[]>; // All actions (system + all users)
@@ -255,14 +223,14 @@ export class DatabaseStorage implements IStorage {
       return db
         .select()
         .from(transcriptSegments)
-        .where(sql`${transcriptSegments.showId} = ${showId} AND ${transcriptSegments.text} ILIKE ${'%' + query + '%'}`)
+        .where(sql`${transcriptSegments.showId} = ${showId} AND ${transcriptSegments.text} LIKE ${'%' + query + '%'}`)
         .orderBy(desc(transcriptSegments.timestamp))
         .limit(3000);
     }
     return db
       .select()
       .from(transcriptSegments)
-      .where(sql`${transcriptSegments.text} ILIKE ${'%' + query + '%'}`)
+      .where(sql`${transcriptSegments.text} LIKE ${'%' + query + '%'}`)
       .orderBy(desc(transcriptSegments.timestamp))
       .limit(3000);
   }
@@ -469,130 +437,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(sourceChunks.id, chunkId));
   }
 
-  // Usage Record methods
-  async createUsageRecord(record: InsertUsageRecord): Promise<UsageRecord> {
-    const [created] = await db.insert(usageRecords).values(record).returning();
-    return created;
-  }
-
-  async getUsageRecords(): Promise<UsageRecord[]> {
-    return db.select().from(usageRecords).orderBy(desc(usageRecords.createdAt));
-  }
-
-  async getUsageStats(showId?: number | null): Promise<{ transcriptSeconds: number; voiceSeconds: number; voiceInSeconds: number; voiceOutSeconds: number }> {
-    const transcriptConditions = [eq(usageRecords.type, 'transcript')];
-    // Voice includes 'voice', 'voice_in', and 'voice_out' for backward compatibility
-    const voiceConditions = [sql`${usageRecords.type} IN ('voice', 'voice_in', 'voice_out')`];
-    const voiceInConditions = [eq(usageRecords.type, 'voice_in')];
-    const voiceOutConditions = [eq(usageRecords.type, 'voice_out')];
-    
-    if (showId !== undefined && showId !== null) {
-      transcriptConditions.push(eq(usageRecords.showId, showId));
-      voiceConditions.push(eq(usageRecords.showId, showId));
-      voiceInConditions.push(eq(usageRecords.showId, showId));
-      voiceOutConditions.push(eq(usageRecords.showId, showId));
-    }
-    
-    const transcriptResult = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${usageRecords.seconds}), 0)` 
-    }).from(usageRecords).where(and(...transcriptConditions));
-    
-    const voiceResult = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${usageRecords.seconds}), 0)` 
-    }).from(usageRecords).where(and(...voiceConditions));
-    
-    const voiceInResult = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${usageRecords.seconds}), 0)` 
-    }).from(usageRecords).where(and(...voiceInConditions));
-    
-    const voiceOutResult = await db.select({ 
-      total: sql<number>`COALESCE(SUM(${usageRecords.seconds}), 0)` 
-    }).from(usageRecords).where(and(...voiceOutConditions));
-    
-    return {
-      transcriptSeconds: Number(transcriptResult[0]?.total || 0),
-      voiceSeconds: Number(voiceResult[0]?.total || 0),
-      voiceInSeconds: Number(voiceInResult[0]?.total || 0),
-      voiceOutSeconds: Number(voiceOutResult[0]?.total || 0)
-    };
-  }
-
-  async getUsageByDay(days: number, showId?: number | null): Promise<Array<{ date: string; transcriptSeconds: number; voiceSeconds: number; voiceInSeconds: number; voiceOutSeconds: number }>> {
-    let whereCondition = sql`${usageRecords.createdAt} >= NOW() - INTERVAL '${sql.raw(String(days))} days'`;
-    
-    if (showId !== undefined && showId !== null) {
-      whereCondition = sql`${usageRecords.createdAt} >= NOW() - INTERVAL '${sql.raw(String(days))} days' AND ${usageRecords.showId} = ${showId}`;
-    }
-    
-    const result = await db.select({
-      date: sql<string>`DATE(${usageRecords.createdAt})::text`,
-      type: usageRecords.type,
-      total: sql<number>`SUM(${usageRecords.seconds})`
-    })
-    .from(usageRecords)
-    .where(whereCondition)
-    .groupBy(sql`DATE(${usageRecords.createdAt})`, usageRecords.type)
-    .orderBy(sql`DATE(${usageRecords.createdAt})`);
-    
-    // Transform to daily aggregates
-    const dayMap = new Map<string, { transcriptSeconds: number; voiceSeconds: number; voiceInSeconds: number; voiceOutSeconds: number }>();
-    for (const row of result) {
-      if (!dayMap.has(row.date)) {
-        dayMap.set(row.date, { transcriptSeconds: 0, voiceSeconds: 0, voiceInSeconds: 0, voiceOutSeconds: 0 });
-      }
-      const day = dayMap.get(row.date)!;
-      if (row.type === 'transcript') {
-        day.transcriptSeconds = Number(row.total);
-      } else if (row.type === 'voice' || row.type === 'voice_in' || row.type === 'voice_out') {
-        day.voiceSeconds += Number(row.total);
-      }
-      if (row.type === 'voice_in') {
-        day.voiceInSeconds = Number(row.total);
-      } else if (row.type === 'voice_out') {
-        day.voiceOutSeconds = Number(row.total);
-      }
-    }
-    
-    return Array.from(dayMap.entries()).map(([date, stats]) => ({ date, ...stats }));
-  }
-  
-  async getUsageByShow(days: number): Promise<Array<{ showId: number | null; showTitle: string | null; transcriptSeconds: number; voiceSeconds: number; voiceInSeconds: number; voiceOutSeconds: number }>> {
-    const whereCondition = sql`${usageRecords.createdAt} >= NOW() - INTERVAL '${sql.raw(String(days))} days'`;
-    
-    const result = await db.select({
-      showId: usageRecords.showId,
-      showTitle: shows.title,
-      type: usageRecords.type,
-      total: sql<number>`SUM(${usageRecords.seconds})`
-    })
-    .from(usageRecords)
-    .leftJoin(shows, eq(usageRecords.showId, shows.id))
-    .where(whereCondition)
-    .groupBy(usageRecords.showId, shows.title, usageRecords.type);
-    
-    // Transform to per-show aggregates
-    const showMap = new Map<number | null, { showTitle: string | null; transcriptSeconds: number; voiceSeconds: number; voiceInSeconds: number; voiceOutSeconds: number }>();
-    for (const row of result) {
-      const key = row.showId;
-      if (!showMap.has(key)) {
-        showMap.set(key, { showTitle: row.showTitle, transcriptSeconds: 0, voiceSeconds: 0, voiceInSeconds: 0, voiceOutSeconds: 0 });
-      }
-      const show = showMap.get(key)!;
-      if (row.type === 'transcript') {
-        show.transcriptSeconds = Number(row.total);
-      } else if (row.type === 'voice' || row.type === 'voice_in' || row.type === 'voice_out') {
-        show.voiceSeconds += Number(row.total);
-      }
-      if (row.type === 'voice_in') {
-        show.voiceInSeconds = Number(row.total);
-      } else if (row.type === 'voice_out') {
-        show.voiceOutSeconds = Number(row.total);
-      }
-    }
-    
-    return Array.from(showMap.entries()).map(([showId, stats]) => ({ showId, ...stats }));
-  }
-  
   // Admin methods
   async getAllUsers(): Promise<User[]> {
     return db.select().from(users).orderBy(desc(users.createdAt));
@@ -605,75 +449,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated;
   }
-  
-  async getUsageStatsByUser(): Promise<Array<{ userId: string | null; email: string | null; firstName: string | null; lastName: string | null; transcriptSeconds: number; voiceSeconds: number }>> {
-    const result = await db.select({
-      userId: usageRecords.userId,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      type: usageRecords.type,
-      total: sql<number>`SUM(${usageRecords.seconds})`
-    })
-    .from(usageRecords)
-    .leftJoin(users, eq(usageRecords.userId, users.id))
-    .groupBy(usageRecords.userId, users.email, users.firstName, users.lastName, usageRecords.type);
-    
-    const userMap = new Map<string | null, { email: string | null; firstName: string | null; lastName: string | null; transcriptSeconds: number; voiceSeconds: number }>();
-    for (const row of result) {
-      const key = row.userId;
-      if (!userMap.has(key)) {
-        userMap.set(key, { email: row.email, firstName: row.firstName, lastName: row.lastName, transcriptSeconds: 0, voiceSeconds: 0 });
-      }
-      const user = userMap.get(key)!;
-      if (row.type === 'transcript') {
-        user.transcriptSeconds = Number(row.total);
-      } else if (row.type === 'voice') {
-        user.voiceSeconds = Number(row.total);
-      }
-    }
-    
-    return Array.from(userMap.entries()).map(([userId, stats]) => ({ userId, ...stats }));
-  }
-  
-  async getUsageByUser(days: number): Promise<Array<{ userId: string | null; email: string | null; firstName: string | null; lastName: string | null; date: string; transcriptSeconds: number; voiceSeconds: number }>> {
-    const whereCondition = sql`${usageRecords.createdAt} >= NOW() - INTERVAL '${sql.raw(String(days))} days'`;
-    
-    const result = await db.select({
-      userId: usageRecords.userId,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      date: sql<string>`DATE(${usageRecords.createdAt})::text`,
-      type: usageRecords.type,
-      total: sql<number>`SUM(${usageRecords.seconds})`
-    })
-    .from(usageRecords)
-    .leftJoin(users, eq(usageRecords.userId, users.id))
-    .where(whereCondition)
-    .groupBy(usageRecords.userId, users.email, users.firstName, users.lastName, sql`DATE(${usageRecords.createdAt})`, usageRecords.type)
-    .orderBy(sql`DATE(${usageRecords.createdAt})`);
-    
-    const dayUserMap = new Map<string, { email: string | null; firstName: string | null; lastName: string | null; transcriptSeconds: number; voiceSeconds: number }>();
-    for (const row of result) {
-      const key = `${row.userId || 'unknown'}_${row.date}`;
-      if (!dayUserMap.has(key)) {
-        dayUserMap.set(key, { email: row.email, firstName: row.firstName, lastName: row.lastName, transcriptSeconds: 0, voiceSeconds: 0 });
-      }
-      const entry = dayUserMap.get(key)!;
-      if (row.type === 'transcript') {
-        entry.transcriptSeconds = Number(row.total);
-      } else if (row.type === 'voice') {
-        entry.voiceSeconds = Number(row.total);
-      }
-    }
-    
-    return Array.from(dayUserMap.entries()).map(([key, stats]) => {
-      const [userId, date] = key.split('_');
-      return { userId: userId === 'unknown' ? null : userId, date, ...stats };
-    });
-  }
-  
+
   // User preferences
   async updateVoicePreference(userId: string, voicePreference: string): Promise<User | undefined> {
     const [updated] = await db.update(users)
@@ -682,100 +458,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updated;
   }
-  
-  // User Credits methods
-  async getUserCredits(userId: string): Promise<UserCredits | undefined> {
-    const [credits] = await db.select().from(userCredits).where(eq(userCredits.userId, userId));
-    return credits;
-  }
-  
-  async createUserCredits(userId: string, transcriptSeconds: number = 0, voiceSeconds: number = 0): Promise<UserCredits> {
-    const [created] = await db.insert(userCredits)
-      .values({ userId, transcriptSeconds, voiceSeconds })
-      .returning();
-    return created;
-  }
-  
-  async addCredits(userId: string, transcriptSeconds: number, voiceSeconds: number): Promise<UserCredits> {
-    const existing = await this.getUserCredits(userId);
-    if (existing) {
-      const [updated] = await db.update(userCredits)
-        .set({
-          transcriptSeconds: sql`${userCredits.transcriptSeconds} + ${transcriptSeconds}`,
-          voiceSeconds: sql`${userCredits.voiceSeconds} + ${voiceSeconds}`,
-          updatedAt: new Date()
-        })
-        .where(eq(userCredits.userId, userId))
-        .returning();
-      return updated;
-    }
-    return this.createUserCredits(userId, transcriptSeconds, voiceSeconds);
-  }
-  
-  async deductCredits(userId: string, transcriptSeconds: number, voiceSeconds: number): Promise<UserCredits | null> {
-    const existing = await this.getUserCredits(userId);
-    if (!existing) return null;
-    
-    const newTranscript = Math.max(0, existing.transcriptSeconds - transcriptSeconds);
-    const newVoice = Math.max(0, existing.voiceSeconds - voiceSeconds);
-    
-    const [updated] = await db.update(userCredits)
-      .set({
-        transcriptSeconds: newTranscript,
-        voiceSeconds: newVoice,
-        updatedAt: new Date()
-      })
-      .where(eq(userCredits.userId, userId))
-      .returning();
-    return updated;
-  }
-  
-  // Credit Purchase methods
-  async createCreditPurchase(purchase: InsertCreditPurchase): Promise<CreditPurchase> {
-    const [created] = await db.insert(creditPurchases).values(purchase).returning();
-    return created;
-  }
-  
-  async getCreditPurchase(stripeSessionId: string): Promise<CreditPurchase | undefined> {
-    const [purchase] = await db.select().from(creditPurchases)
-      .where(eq(creditPurchases.stripeSessionId, stripeSessionId));
-    return purchase;
-  }
-  
-  async updateCreditPurchaseStatus(stripeSessionId: string, status: string, paymentIntentId?: string): Promise<CreditPurchase | undefined> {
-    const updateData: any = { status };
-    if (paymentIntentId) {
-      updateData.stripePaymentIntentId = paymentIntentId;
-    }
-    if (status === 'completed') {
-      updateData.completedAt = new Date();
-    }
-    const [updated] = await db.update(creditPurchases)
-      .set(updateData)
-      .where(eq(creditPurchases.stripeSessionId, stripeSessionId))
-      .returning();
-    return updated;
-  }
-  
-  async getUserCreditPurchases(userId: string): Promise<CreditPurchase[]> {
-    return db.select().from(creditPurchases)
-      .where(eq(creditPurchases.userId, userId))
-      .orderBy(desc(creditPurchases.createdAt));
-  }
-  
-  async getAllCreditPurchases(): Promise<CreditPurchase[]> {
-    return db.select().from(creditPurchases)
-      .orderBy(desc(creditPurchases.createdAt));
-  }
-  
-  async updateCreditPurchaseStatusById(purchaseId: number, status: string): Promise<CreditPurchase | undefined> {
-    const [updated] = await db.update(creditPurchases)
-      .set({ status })
-      .where(eq(creditPurchases.id, purchaseId))
-      .returning();
-    return updated;
-  }
-  
+
   // Quick Action methods
   async getAllQuickActions(): Promise<QuickAction[]> {
     return db.select().from(quickActions).orderBy(quickActions.sortOrder);

@@ -16,7 +16,7 @@
       "title": "Remove Stripe billing and credits system",
       "description": "Remove all Stripe integration, credit packages, checkout pages, usage tracking, and webhook handlers. Remove stripe, stripe-replit-sync dependencies. Remove Credits page, CheckoutSuccess/Cancel pages, UsageDashboard. Remove credit-checking middleware from routes. The app should work without any billing restrictions.",
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "ARCH-3",

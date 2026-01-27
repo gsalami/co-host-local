@@ -2498,7 +2498,7 @@ ${transcriptContext}`;
       // Get existing system actions
       let systemActions = await storage.getSystemQuickActions();
       const existingLabels = new Set(systemActions.map(a => a.label));
-      console.log("Loading default quick actions, found:", systemActions.length, "existing system actions:", [...existingLabels]);
+      console.log("Loading default quick actions, found:", systemActions.length, "existing system actions:", Array.from(existingLabels));
       
       // Create any missing default actions (upsert by label)
       let createdCount = 0;

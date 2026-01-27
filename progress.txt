@@ -26,3 +26,18 @@ Started: Tue Jan 27 14:13:30 CET 2026
   - Login endpoint is POST /api/login (not GET), logout is POST /api/logout
   - Landing page shown on / when not authenticated, login page on all other routes
 ---
+
+## 2026-01-27 16:00 - ARCH-2
+- What was implemented: Removed all Stripe billing and credits system integration
+- Files changed:
+  - Deleted: client/src/pages/Credits.tsx, client/src/pages/CheckoutSuccess.tsx, client/src/pages/CheckoutCancel.tsx, client/src/hooks/use-credits.ts, server/stripeClient.ts, server/webhookHandlers.ts
+  - Modified: package.json (removed stripe + stripe-replit-sync), client/src/App.tsx (removed credit nav), server/routes.ts (removed all credit/usage/stripe routes), server/index.ts (removed Stripe init), shared/schema.ts (removed credit tables)
+- **Learnings for future iterations:**
+  - Stripe was deeply integrated - had dependencies in package.json, server files, client pages, routes, schema, and webhooks
+  - Credit system had both frontend (UI components, hooks) and backend (routes, storage methods, DB tables) parts
+  - Removed 3 DB tables: usageRecords, userCredits, creditPurchases
+  - Storage.ts still has unused methods referencing removed types - will be cleaned up in ARCH-3 during SQLite migration
+  - App now runs without billing restrictions - all routes and features are freely accessible
+  - Removed credit-checking middleware (isAllowedEmail) that was gating API access
+  - WebSocket handlers had credit deduction logic that needed removal
+---

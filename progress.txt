@@ -86,3 +86,19 @@ Started: Tue Jan 27 14:13:30 CET 2026
   - Dark mode is the default theme with slate colors and Kuble blue primary (#0D6EFD)
 ---
 
+## 2026-01-27 22:00 - ARCH-5
+- What was implemented: Rewrote README.md and updated CLAUDE.md with comprehensive local setup instructions and architecture documentation
+- Files changed:
+  - Modified: README.md (complete rewrite with 290+ lines of documentation)
+  - Modified: CLAUDE.md (updated to reflect SQLite, local auth, removal of Stripe/credits)
+  - Note: .env.example was already updated in ARCH-3 (no further changes needed)
+- **Learnings for future iterations:**
+  - The .env.example already had all required variables from ARCH-3 (AUTH_USER, AUTH_PASSWORD, GOOGLE_AI_API_KEY, ELEVENLABS_API_KEY)
+  - README needed complete rewrite to reflect the architectural changes from all previous stories
+  - CLAUDE.md serves as developer guide and needed updates to match current architecture (SQLite, no billing, local auth)
+  - Documentation should include: quick start, prerequisites, API key links, security notes (SESSION_SECRET generation), npm scripts table
+  - Key sections added: Architecture, Database Schema, Authentication, Design System, Features Overview, Troubleshooting
+  - Backend runs on port 5001 in dev mode (npm run dev), frontend on port 5000 (npm run dev:client)
+  - Production mode runs on single port from .env (default 5000) via npm start
+  - TypeScript errors in server/replit_integrations/* are expected and will be cleaned in ARCH-6
+---

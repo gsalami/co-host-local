@@ -37,7 +37,7 @@
       "title": "Update README and .env.example for local setup",
       "description": "Rewrite README.md with clear local setup instructions. Update .env.example with all needed variables (AUTH_USER, AUTH_PASSWORD, DEEPGRAM_API_KEY, ELEVENLABS_API_KEY, GOOGLE_AI_API_KEY, OPENAI_API_KEY). Add npm scripts for dev and production. Document the architecture.",
       "priority": 5,
-      "passes": false
+      "passes": true
     },
     {
       "id": "ARCH-6",

@@ -69,3 +69,20 @@ Started: Tue Jan 27 14:13:30 CET 2026
   - Session storage (for WebSocket auth) still works with SQLite - no changes needed
   - Removed leftover credit system methods from storage.ts (they referenced deleted tables from ARCH-2)
 ---
+## 2026-01-27 20:30 - ARCH-4
+- What was implemented: Created comprehensive CSS design system with custom properties, refactored all pages to use semantic tokens
+- Files changed:
+  - Modified: client/src/index.css (added spacing, typography, z-index, transition, shadow, and status color tokens)
+  - Modified: client/src/App.tsx (replaced hardcoded slate/blue/gray/green colors with semantic tokens)
+  - Modified: client/src/pages/Login.tsx, AdminDashboard.tsx, CoHost.tsx, Help.tsx, Landing.tsx, QuickActions.tsx, Shows.tsx, Sources.tsx, UsageDashboard.tsx, VoiceAgent.tsx (batch replacement of hardcoded colors)
+- **Learnings for future iterations:**
+  - The codebase already had a good foundation with Tailwind v4 @theme inline and HSL color variables
+  - Batch sed replacements are effective for converting hardcoded colors across many files
+  - Added comprehensive design tokens: spacing (xs to 3xl), typography (font sizes, weights, line heights), z-index, transitions, shadows
+  - Added semantic color aliases for easier theming: --color-surface, --color-success, --color-warning, --color-error, --color-info
+  - Replaced patterns: bg-slate-* → bg-background/card/secondary, text-slate-* → text-foreground/muted-foreground, text-blue-* → text-primary, text-green-* → text-success, text-cyan-* → text-accent
+  - Build passes successfully, existing TypeScript errors are in old replit_integrations folder (to be cleaned in ARCH-6)
+  - Design system is now centralized in index.css and easily customizable via CSS custom properties
+  - Dark mode is the default theme with slate colors and Kuble blue primary (#0D6EFD)
+---
+

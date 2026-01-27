@@ -30,7 +30,7 @@
       "title": "Professional Design System with CSS Custom Properties",
       "description": "Create a global CSS design system using CSS custom properties (--color-primary, --color-background, --font-family, --spacing-*, --radius-*, etc.). Refactor existing Tailwind classes to use these variables where appropriate. Create a theme.css file that can be easily customized. Ensure the app looks professional and consistent. Dark mode should be the default.",
       "priority": 4,
-      "passes": false
+      "passes": true
     },
     {
       "id": "ARCH-5",

@@ -154,15 +154,16 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8" 
-                data-testid="button-cta-primary"
-                onClick={() => window.location.href = "/api/login"}
-              >
-                Kostenlos ausprobieren
-                <ArrowRight className="ml-2 size-4" />
-              </Button>
+              <Link href="/login">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8"
+                  data-testid="button-cta-primary"
+                >
+                  Kostenlos ausprobieren
+                  <ArrowRight className="ml-2 size-4" />
+                </Button>
+              </Link>
               <a href="#features">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto border-gray-600 text-gray-300 hover:bg-white/5" data-testid="button-cta-secondary">
                   Mehr erfahren
@@ -321,15 +322,16 @@ export default function Landing() {
           )}
           
           <div className="mt-8 text-center">
-            <Button 
-              size="lg" 
-              className="bg-blue-600 hover:bg-blue-700" 
-              data-testid="button-cta-pricing"
-              onClick={() => window.location.href = "/api/login"}
-            >
-              Jetzt starten
-              <ArrowRight className="ml-2 size-4" />
-            </Button>
+            <Link href="/login">
+              <Button
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700"
+                data-testid="button-cta-pricing"
+              >
+                Jetzt starten
+                <ArrowRight className="ml-2 size-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

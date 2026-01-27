@@ -20,6 +20,7 @@ import CheckoutCancel from "@/pages/CheckoutCancel";
 import QuickActions from "@/pages/QuickActions";
 import Help from "@/pages/Help";
 import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
 import kubleLogo from "./assets/kuble-logo.png";
 import { Radio, Mic, FileText, BarChart2, List, ShieldCheck, Wallet, AlertTriangle, Menu, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -286,6 +287,7 @@ function AuthenticatedRouter() {
 
 function AppContent() {
   const { isLoading, isAuthenticated } = useAuth();
+  const [location] = useLocation();
 
   if (isLoading) {
     return (
@@ -296,7 +298,11 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <Landing />;
+    // Show landing page on root, login on all other routes
+    if (location === "/") {
+      return <Landing />;
+    }
+    return <Login />;
   }
 
   return <AuthenticatedRouter />;

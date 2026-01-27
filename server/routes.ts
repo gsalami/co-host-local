@@ -4,9 +4,9 @@ import { WebSocketServer, WebSocket } from "ws";
 import OpenAI from "openai";
 import { GoogleGenAI, Modality } from "@google/genai";
 import { storage } from "./storage";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
-import { 
-  chunkSourceText, 
+import { setupAuth, isAuthenticated } from "./auth";
+import {
+  chunkSourceText,
   generateEmbedding,
   retrieveRelevantSourceChunks
 } from "./gemini-service";
@@ -90,9 +90,9 @@ async function extractUserIdFromRequest(request: IncomingMessage): Promise<strin
     }
     
     const sessionData = sessionRow.sess as any;
-    
-    // Extract userId from passport session data
-    const userId = sessionData?.passport?.user?.claims?.sub;
+
+    // Extract userId from passport session data (simple local auth)
+    const userId = sessionData?.passport?.user;
     if (!userId) {
       console.log("No userId found in session data");
       return null;
@@ -292,7 +292,7 @@ const isAllowedEmail = (req: any, res: any, next: any) => {
 
 // Admin middleware - checks if user has admin role
 const isAdmin = async (req: any, res: any, next: any) => {
-  const userId = req.user?.claims?.sub;
+  const userId = req.user?.id;
   if (!userId) {
     return res.status(403).json({ message: "Access denied. User not found." });
   }
@@ -309,8 +309,7 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   // Setup authentication (must be before other routes)
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  setupAuth(app);
 
   // WebSocket server for audio streaming
   const wss = new WebSocketServer({ noServer: true });
@@ -1719,7 +1718,7 @@ ${transcriptContext}`;
   // API: Shows CRUD (protected)
   app.get("/api/shows", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1733,7 +1732,7 @@ ${transcriptContext}`;
 
   app.post("/api/shows", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1751,7 +1750,7 @@ ${transcriptContext}`;
 
   app.get("/api/shows/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1769,7 +1768,7 @@ ${transcriptContext}`;
 
   app.put("/api/shows/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1791,7 +1790,7 @@ ${transcriptContext}`;
 
   app.delete("/api/shows/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1806,7 +1805,7 @@ ${transcriptContext}`;
 
   app.get("/api/shows/:id/transcripts", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1826,7 +1825,7 @@ ${transcriptContext}`;
   // API: Export show with all data (protected)
   app.get("/api/shows/:id/export", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1930,7 +1929,7 @@ ${transcriptContext}`;
   // API: System Prompts CRUD (protected)
   app.get("/api/system-prompts", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1944,7 +1943,7 @@ ${transcriptContext}`;
 
   app.post("/api/system-prompts", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1962,7 +1961,7 @@ ${transcriptContext}`;
 
   app.put("/api/system-prompts/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -1984,7 +1983,7 @@ ${transcriptContext}`;
 
   app.delete("/api/system-prompts/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2000,7 +1999,7 @@ ${transcriptContext}`;
   // API: Sources CRUD (protected)
   app.get("/api/sources", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2014,7 +2013,7 @@ ${transcriptContext}`;
 
   app.get("/api/sources/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2032,7 +2031,7 @@ ${transcriptContext}`;
 
   app.post("/api/sources", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2098,7 +2097,7 @@ ${transcriptContext}`;
 
   app.put("/api/sources/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2128,7 +2127,7 @@ ${transcriptContext}`;
 
   app.delete("/api/sources/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2144,7 +2143,7 @@ ${transcriptContext}`;
   // API: Get sources by IDs (for Co-Host context)
   app.post("/api/sources/batch", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2163,7 +2162,7 @@ ${transcriptContext}`;
   // API: Get recent transcript segments (top of mind) (protected)
   app.get("/api/transcripts/recent", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2193,7 +2192,7 @@ ${transcriptContext}`;
   // API: Search transcripts (protected)
   app.get("/api/transcripts/search", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2221,7 +2220,7 @@ ${transcriptContext}`;
   // API: Ask question about conversation (scoped to show) (protected)
   app.post("/api/query", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2282,7 +2281,7 @@ ${transcriptContext}`;
   // API: Speaker Mappings (protected)
   app.get("/api/shows/:id/speakers", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2301,7 +2300,7 @@ ${transcriptContext}`;
 
   app.put("/api/shows/:id/speakers/:speakerIndex", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2328,7 +2327,7 @@ ${transcriptContext}`;
 
   app.delete("/api/shows/:id/speakers/:speakerIndex", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2351,7 +2350,7 @@ ${transcriptContext}`;
   // API: Pronunciation Vocabulary (protected)
   app.get("/api/pronunciation-vocab", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2365,7 +2364,7 @@ ${transcriptContext}`;
 
   app.post("/api/pronunciation-vocab", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2387,7 +2386,7 @@ ${transcriptContext}`;
 
   app.delete("/api/pronunciation-vocab/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2403,7 +2402,7 @@ ${transcriptContext}`;
   // API: Quick Actions - All available (system + user's own)
   app.get("/api/quick-actions/all", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2422,7 +2421,7 @@ ${transcriptContext}`;
   // API: Quick Actions - User's selections (enabled actions for Co-Host)
   app.get("/api/quick-actions/selections", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2439,7 +2438,7 @@ ${transcriptContext}`;
   // API: Quick Actions - Update selection (enable/disable)
   app.post("/api/quick-actions/selections/:actionId", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2456,7 +2455,7 @@ ${transcriptContext}`;
   // API: Quick Actions - Get enabled actions only (for Co-Host session)
   app.get("/api/quick-actions", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2477,7 +2476,7 @@ ${transcriptContext}`;
   // API: Quick Actions CRUD (protected) - Create user action
   app.post("/api/quick-actions", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2502,7 +2501,7 @@ ${transcriptContext}`;
 
   app.put("/api/quick-actions/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2529,7 +2528,7 @@ ${transcriptContext}`;
 
   app.delete("/api/quick-actions/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2550,7 +2549,7 @@ ${transcriptContext}`;
   // API: Quick Actions - Load default system actions for user
   app.post("/api/quick-actions/load-defaults", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2598,7 +2597,7 @@ ${transcriptContext}`;
   // API: Show Summary (protected)
   app.get("/api/shows/:id/summary", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2617,7 +2616,7 @@ ${transcriptContext}`;
 
   app.post("/api/shows/:id/prepare-context", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }
@@ -2731,7 +2730,7 @@ ${transcriptContext}`;
 
   app.get("/api/shows/:id/chunks", isAuthenticated, isAllowedEmail, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ error: "User not authenticated" });
       }

@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/use-auth";
-import { useCredits } from "@/hooks/use-credits";
 import NotFound from "@/pages/not-found";
 import VoiceAgent from "@/pages/VoiceAgent";
 import CoHost from "@/pages/CoHost";
@@ -14,22 +13,18 @@ import Sources from "@/pages/Sources";
 import Shows from "@/pages/Shows";
 import UsageDashboard from "@/pages/UsageDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
-import Credits from "@/pages/Credits";
-import CheckoutSuccess from "@/pages/CheckoutSuccess";
-import CheckoutCancel from "@/pages/CheckoutCancel";
 import QuickActions from "@/pages/QuickActions";
 import Help from "@/pages/Help";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import kubleLogo from "./assets/kuble-logo.png";
-import { Radio, Mic, FileText, BarChart2, List, ShieldCheck, Wallet, AlertTriangle, Menu, HelpCircle } from "lucide-react";
+import { Radio, Mic, FileText, BarChart2, List, ShieldCheck, Menu, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 function Header() {
   const [location, setLocation] = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { credits, formatMinutes, hasLowCredits, hasCriticalCredits } = useCredits();
   
   useEffect(() => {
     fetch("/api/admin/check")
@@ -78,41 +73,7 @@ function Header() {
               </button>
             </Link>
           ))}
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link href="/credits">
-                <button
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                    location === "/credits"
-                      ? "bg-white/10 text-white"
-                      : hasCriticalCredits
-                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                        : hasLowCredits
-                          ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
-                          : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
-                  data-testid="nav-credits"
-                >
-                  {hasCriticalCredits ? (
-                    <AlertTriangle className="size-4" />
-                  ) : (
-                    <Wallet className="size-4" />
-                  )}
-                  <span>{credits ? formatMinutes(credits.transcriptSeconds) : "..."}</span>
-                </button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-xs space-y-1">
-                <div>Transkription: {credits ? formatMinutes(credits.transcriptSeconds) : "..."}</div>
-                <div>Voice: {credits ? formatMinutes(credits.voiceSeconds) : "..."}</div>
-                {hasCriticalCredits && <div className="text-red-400 font-medium">Credits aufgebraucht!</div>}
-                {hasLowCredits && !hasCriticalCredits && <div className="text-amber-400 font-medium">Credits niedrig</div>}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-          
+
           <Link href="/help">
             <button
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-sm transition-colors ${
@@ -146,23 +107,6 @@ function Header() {
 
         {/* Mobile Navigation */}
         <div className="flex md:hidden items-center gap-2">
-          {/* Credits button always visible on mobile */}
-          <Link href="/credits">
-            <button
-              className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                hasCriticalCredits
-                  ? "bg-red-500/20 text-red-400"
-                  : hasLowCredits
-                    ? "bg-amber-500/20 text-amber-400"
-                    : "text-gray-400"
-              }`}
-              data-testid="nav-credits-mobile"
-            >
-              {hasCriticalCredits ? <AlertTriangle className="size-4" /> : <Wallet className="size-4" />}
-              <span>{credits ? formatMinutes(credits.transcriptSeconds) : "..."}</span>
-            </button>
-          </Link>
-
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <button className="p-2 text-gray-400 hover:text-white" data-testid="button-mobile-menu">
@@ -190,27 +134,7 @@ function Header() {
                       <span>{label}</span>
                     </button>
                   ))}
-                  
-                  <button
-                    onClick={() => handleNavClick("/credits")}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
-                      location === "/credits"
-                        ? "bg-white/10 text-white"
-                        : hasCriticalCredits
-                          ? "bg-red-500/10 text-red-400"
-                          : hasLowCredits
-                            ? "bg-amber-500/10 text-amber-400"
-                            : "text-gray-400 hover:text-white hover:bg-white/5"
-                    }`}
-                    data-testid="nav-mobile-credits"
-                  >
-                    {hasCriticalCredits ? <AlertTriangle className="size-5" /> : <Wallet className="size-5" />}
-                    <span>Credits</span>
-                    <span className="ml-auto text-xs opacity-70">
-                      {credits ? formatMinutes(credits.transcriptSeconds) : "..."}
-                    </span>
-                  </button>
-                  
+
                   <button
                     onClick={() => handleNavClick("/help")}
                     className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
@@ -239,19 +163,6 @@ function Header() {
                     </button>
                   )}
                 </nav>
-                
-                <div className="p-4 border-t border-slate-700">
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <div className="flex justify-between">
-                      <span>Transkription:</span>
-                      <span className="text-gray-400">{credits ? formatMinutes(credits.transcriptSeconds) : "..."}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Voice:</span>
-                      <span className="text-gray-400">{credits ? formatMinutes(credits.voiceSeconds) : "..."}</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -272,9 +183,6 @@ function AuthenticatedRouter() {
           <Route path="/sources" component={Sources} />
           <Route path="/shows" component={Shows} />
           <Route path="/usage" component={UsageDashboard} />
-          <Route path="/credits" component={Credits} />
-          <Route path="/checkout/success" component={CheckoutSuccess} />
-          <Route path="/checkout/cancel" component={CheckoutCancel} />
           <Route path="/quick-actions" component={QuickActions} />
           <Route path="/help" component={Help} />
           <Route path="/admin" component={AdminDashboard} />

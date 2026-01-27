@@ -1,0 +1,107 @@
+{
+  "project": "Image to 3D Skybox Converter",
+  "branchName": "ralph/image-to-skybox",
+  "description": "Web app that converts 2D images into immersive 3D skybox environments with interactive preview",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Project Setup with HTML/CSS/JS structure",
+      "description": "As a developer, I want a clean project structure so that development can proceed smoothly",
+      "acceptanceCriteria": [
+        "Create index.html with basic HTML5 structure",
+        "Create styles.css with CSS variables for theming",
+        "Create app.js with module pattern",
+        "Dark theme with modern UI aesthetic",
+        "Responsive layout using CSS Grid/Flexbox"
+      ],
+      "priority": 1,
+      "passes": true
+    },
+    {
+      "id": "US-002",
+      "title": "Image Upload Component",
+      "description": "As a user, I want to upload an image via drag-drop or file picker so that I can convert it to a skybox",
+      "acceptanceCriteria": [
+        "Drag and drop zone with visual feedback",
+        "Click to open file picker",
+        "Accept JPG, PNG, WebP formats",
+        "Show image preview after selection",
+        "Display file name and size",
+        "Clear/remove image button"
+      ],
+      "priority": 2,
+      "passes": true
+    },
+    {
+      "id": "US-003",
+      "title": "Three.js Skybox Viewer Setup",
+      "description": "As a user, I want to see my image in an interactive 3D skybox so that I can explore it",
+      "acceptanceCriteria": [
+        "Include Three.js via CDN",
+        "Create canvas element for 3D rendering",
+        "Implement OrbitControls for mouse/touch interaction",
+        "Create sphere geometry with inverted normals for skybox",
+        "Map uploaded image as texture onto sphere",
+        "Smooth camera controls with damping"
+      ],
+      "priority": 3,
+      "passes": true
+    },
+    {
+      "id": "US-004",
+      "title": "Fullscreen Mode",
+      "description": "As a user, I want to view the skybox in fullscreen so that I get an immersive experience",
+      "acceptanceCriteria": [
+        "Fullscreen toggle button",
+        "Use Fullscreen API",
+        "Resize canvas properly on fullscreen change",
+        "ESC key to exit fullscreen",
+        "Visual indicator for fullscreen state"
+      ],
+      "priority": 4,
+      "passes": true
+    },
+    {
+      "id": "US-005",
+      "title": "Export Equirectangular Image",
+      "description": "As a user, I want to download the skybox as an equirectangular image so that I can use it elsewhere",
+      "acceptanceCriteria": [
+        "Download button in UI",
+        "Render current view to downloadable PNG",
+        "Proper filename with timestamp",
+        "Loading indicator during export"
+      ],
+      "priority": 5,
+      "passes": true
+    },
+    {
+      "id": "US-006",
+      "title": "Mobile Touch Controls",
+      "description": "As a mobile user, I want touch controls to work smoothly so that I can explore on my phone",
+      "acceptanceCriteria": [
+        "Pinch to zoom",
+        "Touch drag to rotate view",
+        "Prevent default scroll behavior in viewer",
+        "Responsive canvas sizing",
+        "Touch-friendly buttons (min 44px tap target)"
+      ],
+      "priority": 6,
+      "passes": true
+    },
+    {
+      "id": "US-007",
+      "title": "Polish and Final Touches",
+      "description": "As a user, I want a polished experience with loading states and smooth animations",
+      "acceptanceCriteria": [
+        "Loading spinner during image processing",
+        "Smooth fade transitions between states",
+        "Error handling with user-friendly messages",
+        "Instructions overlay for first-time users",
+        "Keyboard shortcuts (F for fullscreen, R for reset view)"
+      ],
+      "priority": 7,
+      "passes": true
+    }
+  ],
+  "projectPath": "/Users/kuble/clawd/co-host-local"
+}

@@ -173,67 +173,6 @@ export const insertSourceChunkSchema = createInsertSchema(sourceChunks).omit({
 export type SourceChunk = typeof sourceChunks.$inferSelect;
 export type InsertSourceChunk = z.infer<typeof insertSourceChunkSchema>;
 
-// Usage Records - tracks transcript and voice usage in minutes
-export const usageRecords = pgTable("usage_records", {
-  id: serial("id").primaryKey(),
-  type: text("type").notNull(), // 'transcript' or 'voice'
-  seconds: integer("seconds").notNull(), // actual duration in seconds
-  showId: integer("show_id").references(() => shows.id, { onDelete: "set null" }),
-  userId: varchar("user_id"), // Owner of the usage record
-  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
-
-export const insertUsageRecordSchema = createInsertSchema(usageRecords).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type UsageRecord = typeof usageRecords.$inferSelect;
-export type InsertUsageRecord = z.infer<typeof insertUsageRecordSchema>;
-
-// User Credits - tracks user credit balance in seconds
-export const userCredits = pgTable("user_credits", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().unique(),
-  transcriptSeconds: integer("transcript_seconds").notNull().default(0), // available transcript credits in seconds
-  voiceSeconds: integer("voice_seconds").notNull().default(0), // available voice credits in seconds
-  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
-
-export const insertUserCreditsSchema = createInsertSchema(userCredits).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type UserCredits = typeof userCredits.$inferSelect;
-export type InsertUserCredits = z.infer<typeof insertUserCreditsSchema>;
-
-// Credit Purchases - tracks purchase history
-export const creditPurchases = pgTable("credit_purchases", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull(),
-  stripeSessionId: text("stripe_session_id").notNull(),
-  stripePaymentIntentId: text("stripe_payment_intent_id"),
-  packageName: text("package_name").notNull(), // 'teaser', 'episode', 'staffel', 'produzent', 'podcast-imperium'
-  amountChf: integer("amount_chf").notNull(), // price in CHF cents
-  transcriptSecondsAdded: integer("transcript_seconds_added").notNull(),
-  voiceSecondsAdded: integer("voice_seconds_added").notNull(),
-  status: text("status").notNull().default("pending"), // 'pending', 'completed', 'failed'
-  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-  completedAt: timestamp("completed_at"),
-});
-
-export const insertCreditPurchaseSchema = createInsertSchema(creditPurchases).omit({
-  id: true,
-  createdAt: true,
-  completedAt: true,
-});
-
-export type CreditPurchase = typeof creditPurchases.$inferSelect;
-export type InsertCreditPurchase = z.infer<typeof insertCreditPurchaseSchema>;
-
 // Quick Actions - customizable quick action buttons for Co-Host
 // userId NULL = system default, userId set = user-created
 export const quickActions = pgTable("quick_actions", {

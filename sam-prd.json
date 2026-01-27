@@ -1,0 +1,50 @@
+{
+  "projectName": "Co-Host Local - STT Abstraction & Quality",
+  "projectPath": "/Users/kuble/clawd/co-host-local",
+  "branchName": "sam/stt-abstraction",
+  "description": "Add ElevenLabs STT support alongside existing Deepgram. Create an STT abstraction layer so users can switch between providers in the UI. Code quality improvements and security review.",
+  "userStories": [
+    {
+      "id": "STT-1",
+      "title": "Create STT provider abstraction layer",
+      "description": "Create a server/stt/ directory with a common STT interface (STTProvider). The interface should support: connect(language, onTranscript, onError), sendAudio(chunk), close(). Create server/stt/deepgram.ts implementing the existing Deepgram logic extracted from routes.ts. Create server/stt/index.ts that exports a factory function getSTTProvider(provider: 'deepgram' | 'elevenlabs', apiKey).",
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "STT-2",
+      "title": "Implement ElevenLabs STT provider",
+      "description": "Create server/stt/elevenlabs.ts implementing the STTProvider interface using ElevenLabs Speech-to-Text WebSocket API. Support streaming audio input and real-time transcription output. Handle speaker diarization if available. Use ELEVENLABS_API_KEY from environment.",
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "STT-3",
+      "title": "Add STT provider selection in UI",
+      "description": "Add a dropdown/toggle in the CoHost page UI to select between 'Deepgram' and 'ElevenLabs' as the STT provider. Send the selection via WebSocket when starting a session. The server should use the selected provider for that session. Default to Deepgram if not specified. Persist the selection in localStorage.",
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "STT-4",
+      "title": "Refactor routes.ts - extract WebSocket handlers",
+      "description": "The routes.ts file is 3400+ lines. Extract the audio WebSocket handler (Deepgram STT session) into server/handlers/audio-session.ts. Extract the Co-Host WebSocket handler (Gemini Live) into server/handlers/cohost-session.ts. Keep routes.ts as a thin routing layer. Use the new STT abstraction in the extracted handlers.",
+      "priority": 4,
+      "passes": false
+    },
+    {
+      "id": "STT-5",
+      "title": "Security review and hardening",
+      "description": "Review all API key handling - ensure no keys are exposed to the client. Validate all WebSocket message inputs. Add rate limiting to auth endpoints. Ensure .env.example has no real secrets. Add helmet middleware for Express. Review CORS settings for local use.",
+      "priority": 5,
+      "passes": false
+    },
+    {
+      "id": "STT-6",
+      "title": "TypeScript strict mode and code quality",
+      "description": "Enable stricter TypeScript settings. Fix any type errors. Add proper error types instead of 'any'. Ensure consistent error handling patterns across WebSocket handlers. Add JSDoc comments to the STT interface and main handler functions.",
+      "priority": 6,
+      "passes": false
+    }
+  ]
+}

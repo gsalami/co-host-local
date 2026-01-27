@@ -10,26 +10,10 @@ import {
   generateEmbedding,
   retrieveRelevantSourceChunks
 } from "./gemini-service";
-import { getUncachableStripeClient, getStripePublishableKey, getStripeSync } from "./stripeClient";
 import { sql, eq } from "drizzle-orm";
 import { db } from "./db";
-import { userCredits } from "@shared/schema";
 import { sessions } from "@shared/models/auth";
 import cookieSignature from "cookie-signature";
-
-const FREE_TRANSCRIPT_SECONDS = 5 * 60; // 5 minutes
-const FREE_VOICE_SECONDS = 5 * 60; // 5 minutes
-
-const CREDIT_PACKAGES: Record<string, { transcriptSeconds: number; voiceSeconds: number }> = {
-  "teaser": { transcriptSeconds: 60 * 60, voiceSeconds: 20 * 60 },
-  "episode": { transcriptSeconds: 150 * 60, voiceSeconds: 50 * 60 },
-  "staffel": { transcriptSeconds: 450 * 60, voiceSeconds: 150 * 60 },
-  "produzent": { transcriptSeconds: 1000 * 60, voiceSeconds: 330 * 60 },
-  "podcast-imperium": { transcriptSeconds: 2000 * 60, voiceSeconds: 650 * 60 },
-};
-
-// Allowed email for access
-const ALLOWED_EMAIL = "services@kuble.com";
 
 // Helper function to extract authenticated userId from WebSocket upgrade request cookies
 async function extractUserIdFromRequest(request: IncomingMessage): Promise<string | null> {
@@ -283,12 +267,6 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
-// Custom middleware to check if user email is allowed
-// Currently open to all authenticated users
-const isAllowedEmail = (req: any, res: any, next: any) => {
-  // Access is now open to all authenticated users
-  next();
-};
 
 // Admin middleware - checks if user has admin role
 const isAdmin = async (req: any, res: any, next: any) => {
@@ -894,51 +872,7 @@ export async function registerRoutes(
       }
       
       const totalVoiceSeconds = Math.round(voiceInSeconds) + Math.round(voiceOutSeconds);
-      
-      // Deduct voice credits for combined voice usage
-      if (currentUserId && totalVoiceSeconds > 0) {
-        try {
-          const updatedCredits = await storage.deductCredits(currentUserId, 0, totalVoiceSeconds);
-          if (!updatedCredits) {
-            // User doesn't have credit record - create one with free credits first
-            await storage.createUserCredits(currentUserId, FREE_TRANSCRIPT_SECONDS, FREE_VOICE_SECONDS);
-            await storage.deductCredits(currentUserId, 0, totalVoiceSeconds);
-          }
-          console.log(`Deducted ${totalVoiceSeconds}s voice credits for user ${currentUserId}`);
-        } catch (e) {
-          console.error("Failed to deduct voice credits:", e);
-        }
-      }
-      
-      // Save voice_in usage (user speaking time)
-      if (voiceInSeconds > 0) {
-        try {
-          await storage.createUsageRecord({
-            type: "voice_in",
-            seconds: Math.round(voiceInSeconds),
-            showId: currentShowId,
-            userId: currentUserId
-          });
-          console.log(`Saved voice_in usage: ${Math.round(voiceInSeconds)} seconds for show ${currentShowId}, user ${currentUserId}`);
-        } catch (e) {
-          console.error("Failed to save voice_in usage:", e);
-        }
-      }
-      
-      // Save voice_out usage (AI speaking time)
-      if (voiceOutSeconds > 0) {
-        try {
-          await storage.createUsageRecord({
-            type: "voice_out",
-            seconds: Math.round(voiceOutSeconds),
-            showId: currentShowId,
-            userId: currentUserId
-          });
-          console.log(`Saved voice_out usage: ${Math.round(voiceOutSeconds)} seconds for show ${currentShowId}, user ${currentUserId}`);
-        } catch (e) {
-          console.error("Failed to save voice_out usage:", e);
-        }
-      }
+      console.log(`Voice session ended: ${Math.round(voiceInSeconds)}s user speech, ${Math.round(voiceOutSeconds)}s AI speech`);
       
       // Reset counters
       voiceInSeconds = 0;
@@ -1678,7 +1612,7 @@ ${transcriptContext}`;
   });
 
   // API: Upload context for Co-Host session (bypasses WebSocket size limits)
-  app.post("/api/cohost/context", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/cohost/context", isAuthenticated, async (req, res) => {
     try {
       const { text, files, sourceIds } = req.body;
       
@@ -1716,7 +1650,7 @@ ${transcriptContext}`;
   });
 
   // API: Shows CRUD (protected)
-  app.get("/api/shows", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/shows", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1730,7 +1664,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.post("/api/shows", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/shows", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1748,7 +1682,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.get("/api/shows/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/shows/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1766,7 +1700,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.put("/api/shows/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.put("/api/shows/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1788,7 +1722,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.delete("/api/shows/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.delete("/api/shows/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1803,7 +1737,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.get("/api/shows/:id/transcripts", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/shows/:id/transcripts", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1823,7 +1757,7 @@ ${transcriptContext}`;
   });
 
   // API: Export show with all data (protected)
-  app.get("/api/shows/:id/export", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/shows/:id/export", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1927,7 +1861,7 @@ ${transcriptContext}`;
   });
 
   // API: System Prompts CRUD (protected)
-  app.get("/api/system-prompts", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/system-prompts", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1941,7 +1875,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.post("/api/system-prompts", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/system-prompts", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1959,7 +1893,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.put("/api/system-prompts/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.put("/api/system-prompts/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1981,7 +1915,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.delete("/api/system-prompts/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.delete("/api/system-prompts/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -1997,7 +1931,7 @@ ${transcriptContext}`;
   });
 
   // API: Sources CRUD (protected)
-  app.get("/api/sources", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/sources", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2011,7 +1945,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.get("/api/sources/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/sources/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2029,7 +1963,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.post("/api/sources", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/sources", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2095,7 +2029,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.put("/api/sources/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.put("/api/sources/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2125,7 +2059,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.delete("/api/sources/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.delete("/api/sources/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2141,7 +2075,7 @@ ${transcriptContext}`;
   });
 
   // API: Get sources by IDs (for Co-Host context)
-  app.post("/api/sources/batch", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/sources/batch", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2160,7 +2094,7 @@ ${transcriptContext}`;
   });
 
   // API: Get recent transcript segments (top of mind) (protected)
-  app.get("/api/transcripts/recent", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/transcripts/recent", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2190,7 +2124,7 @@ ${transcriptContext}`;
   });
 
   // API: Search transcripts (protected)
-  app.get("/api/transcripts/search", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/transcripts/search", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2218,7 +2152,7 @@ ${transcriptContext}`;
   });
 
   // API: Ask question about conversation (scoped to show) (protected)
-  app.post("/api/query", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/query", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2279,7 +2213,7 @@ ${transcriptContext}`;
   });
 
   // API: Speaker Mappings (protected)
-  app.get("/api/shows/:id/speakers", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/shows/:id/speakers", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2298,7 +2232,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.put("/api/shows/:id/speakers/:speakerIndex", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.put("/api/shows/:id/speakers/:speakerIndex", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2325,7 +2259,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.delete("/api/shows/:id/speakers/:speakerIndex", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.delete("/api/shows/:id/speakers/:speakerIndex", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2348,7 +2282,7 @@ ${transcriptContext}`;
   });
 
   // API: Pronunciation Vocabulary (protected)
-  app.get("/api/pronunciation-vocab", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/pronunciation-vocab", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2362,7 +2296,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.post("/api/pronunciation-vocab", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/pronunciation-vocab", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2384,7 +2318,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.delete("/api/pronunciation-vocab/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.delete("/api/pronunciation-vocab/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2400,7 +2334,7 @@ ${transcriptContext}`;
   });
 
   // API: Quick Actions - All available (system + user's own)
-  app.get("/api/quick-actions/all", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/quick-actions/all", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2419,7 +2353,7 @@ ${transcriptContext}`;
   });
   
   // API: Quick Actions - User's selections (enabled actions for Co-Host)
-  app.get("/api/quick-actions/selections", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/quick-actions/selections", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2436,7 +2370,7 @@ ${transcriptContext}`;
   });
   
   // API: Quick Actions - Update selection (enable/disable)
-  app.post("/api/quick-actions/selections/:actionId", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/quick-actions/selections/:actionId", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2453,7 +2387,7 @@ ${transcriptContext}`;
   });
   
   // API: Quick Actions - Get enabled actions only (for Co-Host session)
-  app.get("/api/quick-actions", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/quick-actions", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2474,7 +2408,7 @@ ${transcriptContext}`;
   });
 
   // API: Quick Actions CRUD (protected) - Create user action
-  app.post("/api/quick-actions", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/quick-actions", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2499,7 +2433,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.put("/api/quick-actions/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.put("/api/quick-actions/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2526,7 +2460,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.delete("/api/quick-actions/:id", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.delete("/api/quick-actions/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2547,7 +2481,7 @@ ${transcriptContext}`;
   });
 
   // API: Quick Actions - Load default system actions for user
-  app.post("/api/quick-actions/load-defaults", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/quick-actions/load-defaults", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2595,7 +2529,7 @@ ${transcriptContext}`;
   });
 
   // API: Show Summary (protected)
-  app.get("/api/shows/:id/summary", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/shows/:id/summary", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2614,7 +2548,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.post("/api/shows/:id/prepare-context", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.post("/api/shows/:id/prepare-context", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2728,7 +2662,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.get("/api/shows/:id/chunks", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/shows/:id/chunks", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user?.id;
       if (!userId) {
@@ -2750,90 +2684,6 @@ ${transcriptContext}`;
     } catch (error) {
       console.error("Error fetching chunks:", error);
       res.status(500).json({ error: "Failed to fetch chunks" });
-    }
-  });
-
-  // Usage tracking API endpoints
-  app.post("/api/usage", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const { type, seconds, showId } = req.body;
-      const userId = (req as any).user?.claims?.sub;
-      if (!type || !['transcript', 'voice'].includes(type)) {
-        return res.status(400).json({ error: "Invalid type. Must be 'transcript' or 'voice'" });
-      }
-      if (typeof seconds !== 'number' || seconds < 0) {
-        return res.status(400).json({ error: "Invalid seconds value" });
-      }
-      
-      const roundedSeconds = Math.round(seconds);
-      
-      // Deduct credits if user is authenticated
-      if (userId && roundedSeconds > 0) {
-        const transcriptDeduct = type === 'transcript' ? roundedSeconds : 0;
-        const voiceDeduct = type === 'voice' ? roundedSeconds : 0;
-        
-        const updatedCredits = await storage.deductCredits(userId, transcriptDeduct, voiceDeduct);
-        if (!updatedCredits) {
-          // User doesn't have credit record - create one with free credits first
-          await storage.createUserCredits(userId, FREE_TRANSCRIPT_SECONDS, FREE_VOICE_SECONDS);
-          await storage.deductCredits(userId, transcriptDeduct, voiceDeduct);
-        }
-      }
-      
-      const record = await storage.createUsageRecord({ 
-        type, 
-        seconds: roundedSeconds, 
-        showId: showId || null,
-        userId: userId || null
-      });
-      res.json(record);
-    } catch (error) {
-      console.error("Error creating usage record:", error);
-      res.status(500).json({ error: "Failed to create usage record" });
-    }
-  });
-
-  app.get("/api/usage/stats", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const showId = req.query.showId ? parseInt(req.query.showId as string) : undefined;
-      const stats = await storage.getUsageStats(showId);
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching usage stats:", error);
-      res.status(500).json({ error: "Failed to fetch usage stats" });
-    }
-  });
-
-  app.get("/api/usage/daily", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const days = parseInt(req.query.days as string) || 30;
-      const showId = req.query.showId ? parseInt(req.query.showId as string) : undefined;
-      const dailyStats = await storage.getUsageByDay(days, showId);
-      res.json(dailyStats);
-    } catch (error) {
-      console.error("Error fetching daily usage:", error);
-      res.status(500).json({ error: "Failed to fetch daily usage" });
-    }
-  });
-
-  app.get("/api/usage/by-show", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const days = parseInt(req.query.days as string) || 30;
-      const usageByShow = await storage.getUsageByShow(days);
-      res.json(usageByShow);
-    } catch (error) {
-      console.error("Error fetching usage by show:", error);
-      res.status(500).json({ error: "Failed to fetch usage by show" });
-    }
-  });
-  
-  app.get("/api/usage/records", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const records = await storage.getUsageRecords();
-      res.json(records);
-    } catch (error) {
-      console.error("Error fetching usage records:", error);
-      res.status(500).json({ error: "Failed to fetch usage records" });
     }
   });
 
@@ -2866,37 +2716,6 @@ ${transcriptContext}`;
     }
   });
 
-  app.get("/api/admin/usage/by-user", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const usageByUser = await storage.getUsageStatsByUser();
-      res.json(usageByUser);
-    } catch (error) {
-      console.error("Error fetching usage by user:", error);
-      res.status(500).json({ error: "Failed to fetch usage by user" });
-    }
-  });
-
-  app.get("/api/admin/usage/daily-by-user", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const days = parseInt(req.query.days as string) || 30;
-      const usageByUserDaily = await storage.getUsageByUser(days);
-      res.json(usageByUserDaily);
-    } catch (error) {
-      console.error("Error fetching daily usage by user:", error);
-      res.status(500).json({ error: "Failed to fetch daily usage by user" });
-    }
-  });
-
-  app.get("/api/admin/credits/by-user", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const allCredits = await db.select().from(userCredits);
-      res.json(allCredits);
-    } catch (error) {
-      console.error("Error fetching user credits:", error);
-      res.status(500).json({ error: "Failed to fetch user credits" });
-    }
-  });
-
   // Check if current user is admin
   app.get("/api/admin/check", isAuthenticated, async (req, res) => {
     try {
@@ -2912,81 +2731,8 @@ ${transcriptContext}`;
     }
   });
 
-  // Admin purchases management
-  app.get("/api/admin/purchases", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const purchases = await storage.getAllCreditPurchases();
-      res.json(purchases);
-    } catch (error) {
-      console.error("Error fetching all purchases:", error);
-      res.status(500).json({ error: "Failed to fetch purchases" });
-    }
-  });
-
-  app.put("/api/admin/purchases/:id/status", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const purchaseId = parseInt(req.params.id);
-      const { status } = req.body;
-      
-      if (isNaN(purchaseId)) {
-        return res.status(400).json({ error: "Invalid purchase ID" });
-      }
-      
-      if (!status || !['pending', 'completed', 'cancelled', 'refunded'].includes(status)) {
-        return res.status(400).json({ error: "Invalid status. Must be 'pending', 'completed', 'cancelled', or 'refunded'" });
-      }
-      
-      // Get current purchase to check old status and user
-      const allPurchases = await storage.getAllCreditPurchases();
-      const currentPurchase = allPurchases.find(p => p.id === purchaseId);
-      if (!currentPurchase) {
-        return res.status(404).json({ error: "Purchase not found" });
-      }
-      
-      const oldStatus = currentPurchase.status;
-      const userId = currentPurchase.userId;
-      
-      // Handle credit reconciliation
-      // If going FROM completed TO cancelled/refunded: deduct credits
-      // If going TO completed FROM other status: add credits (but check if already added)
-      if (oldStatus === 'completed' && (status === 'cancelled' || status === 'refunded')) {
-        // Deduct credits that were previously added
-        const deducted = await storage.deductCredits(
-          userId,
-          currentPurchase.transcriptSecondsAdded,
-          currentPurchase.voiceSecondsAdded
-        );
-        if (!deducted) {
-          console.warn(`Could not fully deduct credits for purchase ${purchaseId} refund/cancel`);
-        }
-        console.log(`Deducted credits for ${status} purchase ${purchaseId}: ${currentPurchase.transcriptSecondsAdded}s transcript, ${currentPurchase.voiceSecondsAdded}s voice`);
-      } else if (status === 'completed' && oldStatus !== 'completed') {
-        // Add credits when marking as completed
-        await storage.addCredits(
-          userId,
-          currentPurchase.transcriptSecondsAdded,
-          currentPurchase.voiceSecondsAdded
-        );
-        console.log(`Added credits for completed purchase ${purchaseId}: ${currentPurchase.transcriptSecondsAdded}s transcript, ${currentPurchase.voiceSecondsAdded}s voice`);
-      }
-      
-      const updated = await storage.updateCreditPurchaseStatusById(purchaseId, status);
-      if (!updated) {
-        return res.status(404).json({ error: "Purchase not found" });
-      }
-      
-      // Get updated user credits
-      const userCredits = await storage.getUserCredits(userId);
-      
-      res.json({ purchase: updated, userCredits });
-    } catch (error) {
-      console.error("Error updating purchase status:", error);
-      res.status(500).json({ error: "Failed to update purchase status" });
-    }
-  });
-
   // Voice preference routes
-  app.get("/api/user/voice-preference", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.get("/api/user/voice-preference", isAuthenticated, async (req, res) => {
     try {
       const userId = (req as any).user?.claims?.sub;
       if (!userId) {
@@ -3000,7 +2746,7 @@ ${transcriptContext}`;
     }
   });
 
-  app.put("/api/user/voice-preference", isAuthenticated, isAllowedEmail, async (req, res) => {
+  app.put("/api/user/voice-preference", isAuthenticated, async (req, res) => {
     try {
       const userId = (req as any).user?.claims?.sub;
       if (!userId) {
@@ -3018,361 +2764,6 @@ ${transcriptContext}`;
     } catch (error) {
       console.error("Error updating voice preference:", error);
       res.status(500).json({ error: "Failed to update voice preference" });
-    }
-  });
-
-  // Credits routes
-  app.get("/api/credits", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const userId = (req as any).user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      let credits = await storage.getUserCredits(userId);
-      
-      if (!credits) {
-        credits = await storage.createUserCredits(userId, FREE_TRANSCRIPT_SECONDS, FREE_VOICE_SECONDS);
-        console.log(`Granted free credits to new user ${userId}: ${FREE_TRANSCRIPT_SECONDS}s transcript, ${FREE_VOICE_SECONDS}s voice`);
-      }
-      
-      res.json(credits);
-    } catch (error) {
-      console.error("Error fetching credits:", error);
-      res.status(500).json({ error: "Failed to fetch credits" });
-    }
-  });
-
-  app.get("/api/credits/check", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const userId = (req as any).user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      let credits = await storage.getUserCredits(userId);
-      if (!credits) {
-        credits = await storage.createUserCredits(userId, FREE_TRANSCRIPT_SECONDS, FREE_VOICE_SECONDS);
-      }
-      
-      const LOW_CREDITS_THRESHOLD = 60; // 1 minute
-      const CRITICAL_CREDITS_THRESHOLD = 0;
-      
-      const transcriptStatus = credits.transcriptSeconds <= CRITICAL_CREDITS_THRESHOLD ? "depleted" 
-        : credits.transcriptSeconds <= LOW_CREDITS_THRESHOLD ? "low" : "ok";
-      const voiceStatus = credits.voiceSeconds <= CRITICAL_CREDITS_THRESHOLD ? "depleted" 
-        : credits.voiceSeconds <= LOW_CREDITS_THRESHOLD ? "low" : "ok";
-      
-      res.json({
-        transcriptSeconds: credits.transcriptSeconds,
-        voiceSeconds: credits.voiceSeconds,
-        transcriptStatus,
-        voiceStatus,
-        canTranscribe: credits.transcriptSeconds > 0,
-        canUseVoice: credits.voiceSeconds > 0,
-      });
-    } catch (error) {
-      console.error("Error checking credits:", error);
-      res.status(500).json({ error: "Failed to check credits" });
-    }
-  });
-  
-  app.get("/api/credits/packages", async (req, res) => {
-    try {
-      const result = await db.execute(
-        sql`
-          SELECT 
-            p.id as product_id,
-            p.name as product_name,
-            p.description as product_description,
-            p.metadata as product_metadata,
-            pr.id as price_id,
-            pr.unit_amount,
-            pr.currency
-          FROM stripe.products p
-          LEFT JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
-          WHERE p.active = true
-          ORDER BY pr.unit_amount ASC
-        `
-      );
-      
-      const packages = result.rows.map((row: any) => ({
-        id: row.price_id,
-        name: row.product_name,
-        description: row.product_description,
-        priceChf: row.unit_amount / 100,
-        transcriptMinutes: row.product_metadata?.transcriptSeconds ? parseInt(row.product_metadata.transcriptSeconds) / 60 : 0,
-        voiceMinutes: row.product_metadata?.voiceSeconds ? parseInt(row.product_metadata.voiceSeconds) / 60 : 0,
-        packageId: row.product_metadata?.packageId,
-      }));
-      
-      res.json(packages);
-    } catch (error) {
-      console.error("Error fetching credit packages:", error);
-      res.status(500).json({ error: "Failed to fetch credit packages" });
-    }
-  });
-
-  app.get("/api/credits/purchases", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const userId = (req as any).user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      const purchases = await storage.getUserCreditPurchases(userId);
-      res.json(purchases);
-    } catch (error) {
-      console.error("Error fetching purchase history:", error);
-      res.status(500).json({ error: "Failed to fetch purchase history" });
-    }
-  });
-
-  app.post("/api/checkout", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const userId = (req as any).user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      const { priceId } = req.body;
-      if (!priceId) {
-        return res.status(400).json({ error: "Price ID is required" });
-      }
-      
-      const stripe = await getUncachableStripeClient();
-      
-      const priceResult = await db.execute(
-        sql`
-          SELECT pr.*, p.name as product_name, p.metadata as product_metadata
-          FROM stripe.prices pr
-          JOIN stripe.products p ON p.id = pr.product
-          WHERE pr.id = ${priceId}
-        `
-      );
-      
-      if (!priceResult.rows[0]) {
-        return res.status(404).json({ error: "Price not found" });
-      }
-      
-      const priceData = priceResult.rows[0] as any;
-      const packageId = priceData.product_metadata?.packageId;
-      
-      if (!packageId || !CREDIT_PACKAGES[packageId]) {
-        return res.status(400).json({ error: "Invalid package" });
-      }
-      
-      const packageConfig = CREDIT_PACKAGES[packageId];
-      
-      // Use the request host to preserve custom domains
-      const host = req.get('host') || process.env.REPLIT_DOMAINS?.split(",")[0];
-      const protocol = req.get('x-forwarded-proto') || 'https';
-      const baseUrl = `${protocol}://${host}`;
-      
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [{ price: priceId, quantity: 1 }],
-        mode: "payment",
-        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/checkout/cancel`,
-        metadata: {
-          userId,
-          packageId,
-          transcriptSeconds: String(packageConfig.transcriptSeconds),
-          voiceSeconds: String(packageConfig.voiceSeconds),
-        },
-      });
-      
-      await storage.createCreditPurchase({
-        userId,
-        stripeSessionId: session.id,
-        packageName: packageId,
-        amountChf: priceData.unit_amount,
-        transcriptSecondsAdded: packageConfig.transcriptSeconds,
-        voiceSecondsAdded: packageConfig.voiceSeconds,
-        status: "pending",
-      });
-      
-      res.json({ url: session.url });
-    } catch (error) {
-      console.error("Error creating checkout session:", error);
-      res.status(500).json({ error: "Failed to create checkout session" });
-    }
-  });
-  
-  app.get("/api/checkout/success", isAuthenticated, isAllowedEmail, async (req, res) => {
-    try {
-      const { session_id } = req.query;
-      const authenticatedUserId = (req as any).user?.claims?.sub;
-      
-      if (!session_id) {
-        return res.status(400).json({ error: "Session ID is required" });
-      }
-      
-      if (!authenticatedUserId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      const stripe = await getUncachableStripeClient();
-      const session = await stripe.checkout.sessions.retrieve(session_id as string);
-      
-      if (session.payment_status !== "paid") {
-        return res.json({ status: "pending" });
-      }
-      
-      const userId = session.metadata?.userId;
-      const packageId = session.metadata?.packageId;
-      
-      // Security check: Ensure the authenticated user matches the session's user
-      if (userId !== authenticatedUserId) {
-        console.error(`User mismatch: authenticated ${authenticatedUserId} vs session ${userId}`);
-        return res.status(403).json({ error: "Session does not belong to authenticated user" });
-      }
-      
-      const existingPurchase = await storage.getCreditPurchase(session.id);
-      if (existingPurchase?.status === "completed") {
-        return res.json({ status: "already_processed", credits: await storage.getUserCredits(existingPurchase.userId) });
-      }
-      
-      if (!userId || !packageId) {
-        return res.status(400).json({ error: "Invalid session metadata" });
-      }
-      
-      const packageConfig = CREDIT_PACKAGES[packageId];
-      if (!packageConfig) {
-        return res.status(400).json({ error: "Unknown package" });
-      }
-      
-      const credits = await storage.addCredits(userId, packageConfig.transcriptSeconds, packageConfig.voiceSeconds);
-      
-      await storage.updateCreditPurchaseStatus(session.id, "completed", session.payment_intent as string);
-      
-      console.log(`Credits added for user ${userId}: +${packageConfig.transcriptSeconds}s transcript, +${packageConfig.voiceSeconds}s voice`);
-      
-      res.json({ status: "success", credits });
-    } catch (error) {
-      console.error("Error processing successful checkout:", error);
-      res.status(500).json({ error: "Failed to process checkout" });
-    }
-  });
-  
-  app.get("/api/stripe/publishable-key", async (req, res) => {
-    try {
-      const publishableKey = await getStripePublishableKey();
-      res.json({ publishableKey });
-    } catch (error) {
-      console.error("Error fetching Stripe publishable key:", error);
-      res.status(500).json({ error: "Failed to fetch Stripe key" });
-    }
-  });
-
-  // Admin endpoint to process a pending purchase by session ID
-  app.post("/api/admin/process-purchase", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const { sessionId } = req.body;
-      if (!sessionId) {
-        return res.status(400).json({ error: "Session ID required" });
-      }
-      
-      const stripe = await getUncachableStripeClient();
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-      
-      if (session.payment_status !== "paid") {
-        return res.status(400).json({ error: "Payment not completed", paymentStatus: session.payment_status });
-      }
-      
-      const userId = session.metadata?.userId;
-      const packageId = session.metadata?.packageId;
-      
-      if (!userId || !packageId) {
-        return res.status(400).json({ error: "Missing metadata in session" });
-      }
-      
-      const existingPurchase = await storage.getCreditPurchase(session.id);
-      if (existingPurchase?.status === "completed") {
-        return res.json({ status: "already_processed", message: "Purchase already completed" });
-      }
-      
-      const packageConfig = CREDIT_PACKAGES[packageId];
-      if (!packageConfig) {
-        return res.status(400).json({ error: "Unknown package: " + packageId });
-      }
-      
-      const credits = await storage.addCredits(userId, packageConfig.transcriptSeconds, packageConfig.voiceSeconds);
-      await storage.updateCreditPurchaseStatus(session.id, "completed", session.payment_intent as string);
-      
-      console.log(`Admin processed purchase for user ${userId}: +${packageConfig.transcriptSeconds}s transcript, +${packageConfig.voiceSeconds}s voice`);
-      
-      res.json({ status: "success", credits, packageId });
-    } catch (error: any) {
-      console.error("Error processing purchase:", error);
-      res.status(500).json({ error: "Failed to process purchase", details: error?.message });
-    }
-  });
-
-  // Admin endpoint to manually add credits to a user
-  app.post("/api/admin/add-credits", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const { userId, transcriptMinutes, voiceMinutes, reason } = req.body;
-      
-      if (!userId || typeof userId !== 'string') {
-        return res.status(400).json({ error: "User ID required" });
-      }
-      
-      // Strict numeric validation - reject non-numeric or negative values
-      const transcriptMin = Number(transcriptMinutes);
-      const voiceMin = Number(voiceMinutes);
-      
-      if (isNaN(transcriptMin) || isNaN(voiceMin)) {
-        return res.status(400).json({ error: "Minutes must be valid numbers" });
-      }
-      
-      if (transcriptMin < 0 || voiceMin < 0) {
-        return res.status(400).json({ error: "Minutes cannot be negative" });
-      }
-      
-      if (transcriptMin === 0 && voiceMin === 0) {
-        return res.status(400).json({ error: "At least one credit type must be positive" });
-      }
-      
-      const transcriptSeconds = Math.round(transcriptMin * 60);
-      const voiceSeconds = Math.round(voiceMin * 60);
-      
-      const credits = await storage.addCredits(userId, transcriptSeconds, voiceSeconds);
-      
-      console.log(`Admin manually added credits for user ${userId}: +${transcriptSeconds}s transcript, +${voiceSeconds}s voice. Reason: ${reason || 'not specified'}`);
-      
-      res.json({ status: "success", credits, transcriptSeconds, voiceSeconds });
-    } catch (error: any) {
-      console.error("Error adding credits:", error);
-      res.status(500).json({ error: "Failed to add credits", details: error?.message });
-    }
-  });
-
-  // Admin endpoint to manually trigger Stripe sync
-  app.post("/api/admin/stripe/sync", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      console.log("Manual Stripe sync triggered by admin...");
-      const stripeSync = await getStripeSync();
-      await stripeSync.syncBackfill();
-      console.log("Manual Stripe sync completed");
-      
-      // Verify products are synced
-      const result = await db.execute(
-        sql`SELECT COUNT(*) as count FROM stripe.products WHERE active = true`
-      );
-      const productCount = Number((result.rows[0] as any)?.count || 0);
-      
-      res.json({ 
-        success: true, 
-        message: "Stripe data synced successfully",
-        productsCount: productCount
-      });
-    } catch (error: any) {
-      console.error("Error syncing Stripe data:", error);
-      res.status(500).json({ 
-        error: "Failed to sync Stripe data", 
-        details: error?.message || String(error)
-      });
     }
   });
 

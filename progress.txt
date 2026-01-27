@@ -1,0 +1,28 @@
+# Ralph Progress Log
+Started: Tue Jan 27 14:13:30 CET 2026
+---
+
+## Codebase Patterns
+- Auth system uses simple username/password from env vars (AUTH_USER, AUTH_PASSWORD)
+- User sessions stored in PostgreSQL sessions table (for WebSocket compatibility)
+- Session data structure: `sessionData.passport.user` contains user ID (not claims.sub)
+- All routes access user via `req.user.id` (not `req.user.claims.sub`)
+- Express.User type extended in server/types.d.ts to match DbUser from shared/models/auth
+- WebSocket auth extracts userId from signed session cookies
+- Login page at /login, Landing page at / (for unauthenticated users)
+
+## 2026-01-27 14:30 - ARCH-1
+- What was implemented: Replaced Replit OpenID auth with simple local username/password authentication
+- Files changed:
+  - Created: server/auth.ts (new auth module), client/src/pages/Login.tsx, server/types.d.ts
+  - Modified: server/routes.ts, client/src/App.tsx, client/src/hooks/use-auth.ts, client/src/lib/auth-utils.ts, client/src/pages/Landing.tsx, .env.example, package.json
+  - Deleted: server/replit_integrations/auth/* (entire folder)
+- **Learnings for future iterations:**
+  - The sessions table is still needed for WebSocket authentication (session cookie validation)
+  - Session structure is simpler now: `sessionData.passport.user` = userId string (was `sessionData.passport.user.claims.sub`)
+  - All route handlers needed updating from `req.user?.claims?.sub` to `req.user?.id`
+  - Express.User type must be augmented globally to include our DbUser fields
+  - memorystore used for Express sessions, but sessions table still queried by WebSocket auth helper
+  - Login endpoint is POST /api/login (not GET), logout is POST /api/logout
+  - Landing page shown on / when not authenticated, login page on all other routes
+---

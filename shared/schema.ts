@@ -3,7 +3,7 @@ import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Re-export auth schema (users and sessions from Replit Auth)
+// Re-export auth schema (users and sessions)
 export * from "./models/auth";
 
 // Shows - groups transcript segments by recording session

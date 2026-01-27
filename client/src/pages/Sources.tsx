@@ -173,8 +173,8 @@ export default function Sources() {
   const getTypeIcon = (type: string) => {
     if (type === "pdf") return <FileText className="size-4 text-red-400" />;
     if (type === "json") return <FileCode className="size-4 text-yellow-400" />;
-    if (type === "markdown") return <FileCode className="size-4 text-blue-400" />;
-    return <FileText className="size-4 text-gray-400" />;
+    if (type === "markdown") return <FileCode className="size-4 text-primary" />;
+    return <FileText className="size-4 text-muted-foreground" />;
   };
 
   const formatDate = (date: Date | string) => {
@@ -231,12 +231,12 @@ export default function Sources() {
         </div>
 
         {isLoading ? (
-          <div className="text-center py-8 text-gray-400">Laden...</div>
+          <div className="text-center py-8 text-muted-foreground">Laden...</div>
         ) : sources.length === 0 ? (
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-secondary/50 border-border">
             <CardContent className="py-12 text-center">
-              <FileText className="size-12 mx-auto mb-4 text-gray-500" />
-              <p className="text-gray-400 mb-4">Noch keine Quellen vorhanden</p>
+              <FileText className="size-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">Noch keine Quellen vorhanden</p>
               <Button
                 onClick={() => setIsUploadDialogOpen(true)}
                 className="bg-[#0D6EFD] hover:bg-[#0D6EFD]/90"
@@ -250,7 +250,7 @@ export default function Sources() {
         ) : (
           <div className="space-y-2 sm:space-y-3">
             {sources.map((source) => (
-              <Card key={source.id} className="bg-slate-800/50 border-slate-700" data-testid={`card-source-${source.id}`}>
+              <Card key={source.id} className="bg-secondary/50 border-border" data-testid={`card-source-${source.id}`}>
                 <CardContent className="py-3 sm:py-4 px-3 sm:px-6">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -259,7 +259,7 @@ export default function Sources() {
                         <h3 className="font-medium truncate text-sm sm:text-base" data-testid={`text-title-${source.id}`}>
                           {source.title}
                         </h3>
-                        <p className="text-[10px] sm:text-xs text-gray-500 truncate">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                           {source.originalFilename} • {formatDate(source.createdAt)}
                         </p>
                       </div>
@@ -306,12 +306,12 @@ export default function Sources() {
       </div>
 
       <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-700">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle>Neue Quelle hinzufügen</DialogTitle>
           </DialogHeader>
           <Tabs value={uploadTab} onValueChange={(v) => setUploadTab(v as "file" | "text")}>
-            <TabsList className="grid w-full grid-cols-2 bg-slate-800">
+            <TabsList className="grid w-full grid-cols-2 bg-secondary">
               <TabsTrigger value="file" data-testid="tab-file">
                 <Upload className="size-4 mr-2" />
                 Datei
@@ -323,49 +323,49 @@ export default function Sources() {
             </TabsList>
             <TabsContent value="file" className="space-y-4 mt-4">
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Titel</label>
+                <label className="text-sm text-muted-foreground mb-1 block">Titel</label>
                 <Input
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
                   placeholder="Titel der Quelle"
-                  className="bg-slate-800 border-slate-700"
+                  className="bg-secondary border-border"
                   data-testid="input-upload-title"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Datei (PDF, JSON, TXT, MD)</label>
+                <label className="text-sm text-muted-foreground mb-1 block">Datei (PDF, JSON, TXT, MD)</label>
                 <Input
                   type="file"
                   accept=".pdf,.json,.txt,.md,.markdown,text/plain,application/json,application/pdf"
                   onChange={handleFileChange}
-                  className="bg-slate-800 border-slate-700"
+                  className="bg-secondary border-border"
                   data-testid="input-upload-file"
                 />
               </div>
               {uploadFile && (
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Ausgewählt: {uploadFile.name}
                 </p>
               )}
             </TabsContent>
             <TabsContent value="text" className="space-y-4 mt-4">
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Titel</label>
+                <label className="text-sm text-muted-foreground mb-1 block">Titel</label>
                 <Input
                   value={pasteTitle}
                   onChange={(e) => setPasteTitle(e.target.value)}
                   placeholder="Titel der Quelle"
-                  className="bg-slate-800 border-slate-700"
+                  className="bg-secondary border-border"
                   data-testid="input-paste-title"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-400 mb-1 block">Text einfügen</label>
+                <label className="text-sm text-muted-foreground mb-1 block">Text einfügen</label>
                 <Textarea
                   value={pasteContent}
                   onChange={(e) => setPasteContent(e.target.value)}
                   placeholder="Text hier einfügen..."
-                  className="bg-slate-800 border-slate-700 min-h-[200px]"
+                  className="bg-secondary border-border min-h-[200px]"
                   data-testid="input-paste-content"
                 />
               </div>
@@ -403,26 +403,26 @@ export default function Sources() {
       </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-700 max-w-3xl max-h-[80vh]">
+        <DialogContent className="bg-card border-border max-w-3xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Quelle bearbeiten</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-gray-400 mb-1 block">Titel</label>
+              <label className="text-sm text-muted-foreground mb-1 block">Titel</label>
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="bg-slate-800 border-slate-700"
+                className="bg-secondary border-border"
                 data-testid="input-edit-title"
               />
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1 block">Inhalt</label>
+              <label className="text-sm text-muted-foreground mb-1 block">Inhalt</label>
               <Textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                className="bg-slate-800 border-slate-700 min-h-[300px] font-mono text-sm"
+                className="bg-secondary border-border min-h-[300px] font-mono text-sm"
                 data-testid="input-edit-content"
               />
             </div>
@@ -448,11 +448,11 @@ export default function Sources() {
       </Dialog>
 
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-700 max-w-3xl max-h-[80vh]">
+        <DialogContent className="bg-card border-border max-w-3xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>{selectedSource?.title}</DialogTitle>
           </DialogHeader>
-          <div className="bg-slate-800 rounded p-4 overflow-auto max-h-[50vh]">
+          <div className="bg-secondary rounded p-4 overflow-auto max-h-[50vh]">
             <pre className="text-sm whitespace-pre-wrap font-mono" data-testid="text-view-content">
               {selectedSource?.textContent}
             </pre>

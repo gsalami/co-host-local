@@ -36,7 +36,7 @@ interface HelpSection {
 const helpSections: HelpSection[] = [
   {
     id: "recording",
-    icon: <Radio className="size-5 text-cyan-400" />,
+    icon: <Radio className="size-5 text-accent" />,
     title: "Aufnahme & Transkription",
     description: "Nimm deine Podcasts auf und erhalte automatische Live-Transkripte.",
     features: [
@@ -116,7 +116,7 @@ const helpSections: HelpSection[] = [
   },
   {
     id: "sources",
-    icon: <FileText className="size-5 text-blue-400" />,
+    icon: <FileText className="size-5 text-primary" />,
     title: "Quellen & Kontext",
     description: "Lade Dokumente hoch, die der Co-Host als Wissensgrundlage nutzt.",
     features: [
@@ -168,7 +168,7 @@ const helpSections: HelpSection[] = [
   },
   {
     id: "shows",
-    icon: <List className="size-5 text-green-400" />,
+    icon: <List className="size-5 text-success" />,
     title: "Sendungen verwalten",
     description: "Organisiere deine Podcast-Episoden und Transkripte.",
     features: [
@@ -250,17 +250,17 @@ export default function Help() {
   const [expandedSection, setExpandedSection] = useState<string | null>("recording");
 
   return (
-    <div className="h-full overflow-auto bg-slate-900 text-white p-4 md:p-6">
+    <div className="h-full overflow-auto bg-card text-white p-4 md:p-6">
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-cyan-500/10 text-cyan-400 px-4 py-2 rounded-full mb-4">
+          <div className="inline-flex items-center gap-2 bg-cyan-500/10 text-accent px-4 py-2 rounded-full mb-4">
             <HelpCircle className="size-5" />
             <span className="font-medium">Hilfe & Anleitung</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold mb-2" data-testid="text-help-title">
             Willkommen bei Podcast Co-Host
           </h1>
-          <p className="text-gray-400 max-w-xl mx-auto">
+          <p className="text-muted-foreground max-w-xl mx-auto">
             Dein KI-Assistent für Podcast-Aufnahmen mit Live-Transkription und intelligenter Unterstützung.
           </p>
         </div>
@@ -270,7 +270,7 @@ export default function Help() {
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-cyan-500/20 rounded-lg">
-                  <Sparkles className="size-6 text-cyan-400" />
+                  <Sparkles className="size-6 text-accent" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Schnellstart</h3>
@@ -298,7 +298,7 @@ export default function Help() {
           {helpSections.map((section) => (
             <Card 
               key={section.id} 
-              className={`bg-slate-800 border-slate-700 transition-all cursor-pointer ${
+              className={`bg-secondary border-border transition-all cursor-pointer ${
                 expandedSection === section.id ? 'ring-1 ring-cyan-500/50' : ''
               }`}
               data-testid={`help-section-${section.id}`}
@@ -309,31 +309,31 @@ export default function Help() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-700/50 rounded-lg">
+                    <div className="p-2 bg-muted/50 rounded-lg">
                       {section.icon}
                     </div>
                     <div>
                       <CardTitle className="text-base">{section.title}</CardTitle>
-                      <p className="text-xs text-gray-400 mt-0.5">{section.description}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{section.description}</p>
                     </div>
                   </div>
                   {expandedSection === section.id ? (
-                    <ChevronDown className="size-5 text-gray-400" />
+                    <ChevronDown className="size-5 text-muted-foreground" />
                   ) : (
-                    <ChevronRight className="size-5 text-gray-400" />
+                    <ChevronRight className="size-5 text-muted-foreground" />
                   )}
                 </div>
               </CardHeader>
               
               {expandedSection === section.id && (
-                <CardContent className="pt-2 border-t border-slate-700">
+                <CardContent className="pt-2 border-t border-border">
                   <div className="space-y-4">
                     {section.features.map((feature, idx) => (
-                      <div key={idx} className="pl-4 border-l-2 border-slate-600">
+                      <div key={idx} className="pl-4 border-l-2 border-border">
                         <h4 className="font-medium text-sm text-white">{feature.title}</h4>
-                        <p className="text-xs text-gray-400 mt-1">{feature.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{feature.description}</p>
                         {feature.tip && (
-                          <p className="text-xs text-cyan-400 mt-1 flex items-start gap-1">
+                          <p className="text-xs text-accent mt-1 flex items-start gap-1">
                             <span className="font-medium">Tipp:</span> {feature.tip}
                           </p>
                         )}
@@ -341,19 +341,19 @@ export default function Help() {
                     ))}
                     
                     {section.faq && section.faq.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-700">
+                      <div className="mt-4 pt-4 border-t border-border">
                         <h4 className="text-sm font-medium text-gray-300 mb-3">Häufige Fragen</h4>
                         <Accordion type="single" collapsible className="space-y-2">
                           {section.faq.map((item, idx) => (
                             <AccordionItem 
                               key={idx} 
                               value={`faq-${idx}`}
-                              className="border-slate-600 bg-slate-700/30 rounded-lg px-3"
+                              className="border-border bg-muted/30 rounded-lg px-3"
                             >
                               <AccordionTrigger className="text-sm py-2 hover:no-underline">
                                 {item.question}
                               </AccordionTrigger>
-                              <AccordionContent className="text-xs text-gray-400 pb-3">
+                              <AccordionContent className="text-xs text-muted-foreground pb-3">
                                 {item.answer}
                               </AccordionContent>
                             </AccordionItem>
@@ -368,15 +368,15 @@ export default function Help() {
           ))}
         </div>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-secondary/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-slate-700/50 rounded-lg">
-                <MessageSquare className="size-5 text-gray-400" />
+              <div className="p-2 bg-muted/50 rounded-lg">
+                <MessageSquare className="size-5 text-muted-foreground" />
               </div>
               <div>
                 <h3 className="font-medium text-sm">Noch Fragen?</h3>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Frag einfach den Co-Host - er hilft dir gerne bei allen Fragen zur App!
                 </p>
               </div>

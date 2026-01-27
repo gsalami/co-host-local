@@ -4,41 +4,97 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Border Radius Tokens */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
+  /* Color Tokens */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
-  
+
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
-  
+
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
-  
+
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
-  
+
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
-  
+
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
-  
+
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
-  
+
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
-  
+
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  
+
+  /* Additional Semantic Colors for Tailwind */
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+
+  /* Spacing Tokens */
+  --spacing-xs: 0.25rem;    /* 4px */
+  --spacing-sm: 0.5rem;     /* 8px */
+  --spacing-md: 1rem;       /* 16px */
+  --spacing-lg: 1.5rem;     /* 24px */
+  --spacing-xl: 2rem;       /* 32px */
+  --spacing-2xl: 3rem;      /* 48px */
+  --spacing-3xl: 4rem;      /* 64px */
+
+  /* Typography Tokens */
   --font-sans: 'Montserrat', sans-serif;
   --font-mono: 'Geist Mono', monospace;
+
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;     /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;     /* 18px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.5rem;      /* 24px */
+  --font-size-3xl: 1.875rem;    /* 30px */
+  --font-size-4xl: 2.25rem;     /* 36px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Z-Index Tokens */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-popover: 50;
+  --z-tooltip: 60;
+
+  /* Transition Tokens */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* Shadow Tokens */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
 }
 
 :root {
@@ -69,36 +125,50 @@
   /* Unified Slate Dark Theme */
   --background: 222 47% 4%; /* slate-950 #020617 */
   --foreground: 210 40% 98%;
-  
+
   --card: 217 33% 10%; /* slate-900 with slight tint */
   --card-foreground: 210 40% 98%;
-  
+
   --popover: 217 33% 10%;
   --popover-foreground: 210 40% 98%;
-  
+
   /* Kuble Blue Primary */
   --primary: 216 98% 52%; /* #0D6EFD */
   --primary-foreground: 0 0% 100%;
-  
+
   /* Muted Surface - slate-800 */
   --secondary: 217 33% 17%;
   --secondary-foreground: 210 40% 98%;
-  
+
   /* Subtle Text */
   --muted: 217 33% 17%;
   --muted-foreground: 215 20% 65%;
-  
+
   /* Accent - cyan for secondary highlights */
   --accent: 188 94% 42%;
   --accent-foreground: 0 0% 100%;
-  
+
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-  
+
   --border: 217 33% 17%;
   --input: 217 33% 17%;
   --ring: 216 98% 52%;
   --radius: 5px;
+
+  /* Semantic Color Aliases */
+  --color-surface: hsl(217 33% 10%);          /* Card/modal surfaces */
+  --color-surface-hover: hsl(217 33% 14%);    /* Hover state for surfaces */
+  --color-border-subtle: hsl(217 33% 17%);    /* Subtle borders */
+  --color-text-primary: hsl(210 40% 98%);     /* Primary text */
+  --color-text-secondary: hsl(215 20% 65%);   /* Secondary/muted text */
+  --color-text-tertiary: hsl(215 16% 47%);    /* Tertiary/disabled text */
+
+  /* Status Colors */
+  --color-success: hsl(142 71% 45%);          /* Success state (green) */
+  --color-warning: hsl(45 93% 47%);           /* Warning state (yellow) */
+  --color-error: hsl(0 62.8% 30.6%);          /* Error state (red) */
+  --color-info: hsl(188 94% 42%);             /* Info state (cyan/accent) */
 }
 
 @layer base {

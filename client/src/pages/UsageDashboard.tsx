@@ -115,12 +115,12 @@ export default function UsageDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white" data-testid="text-dashboard-title">Nutzungs-Dashboard</h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1">Übersicht über Ihre Transcript- und Voice-Nutzung</p>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1">Übersicht über Ihre Transcript- und Voice-Nutzung</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Popover open={showSelectorOpen} onOpenChange={setShowSelectorOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-64 justify-between bg-slate-700 border-slate-600 text-xs sm:text-sm" data-testid="button-show-selector">
+                <Button variant="outline" className="w-full sm:w-64 justify-between bg-muted border-border text-xs sm:text-sm" data-testid="button-show-selector">
                   <div className="flex items-center gap-2 truncate">
                     <Radio className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0" />
                     <span className="truncate">
@@ -133,14 +133,14 @@ export default function UsageDashboard() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-0" align="end">
-                <div className="p-2 border-b border-slate-700">
+                <div className="p-2 border-b border-border">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Sendung suchen..."
                       value={showSearch}
                       onChange={(e) => setShowSearch(e.target.value)}
-                      className="pl-8 bg-slate-800 border-slate-600"
+                      className="pl-8 bg-secondary border-border"
                       data-testid="input-show-search"
                     />
                   </div>
@@ -148,7 +148,7 @@ export default function UsageDashboard() {
                 <ScrollArea className="h-64">
                   <div className="p-1">
                     <button
-                      className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-slate-700 ${selectedShowId === "all" ? "bg-slate-700" : ""}`}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-muted ${selectedShowId === "all" ? "bg-muted" : ""}`}
                       onClick={() => { setSelectedShowId("all"); setShowSelectorOpen(false); setShowSearch(""); }}
                       data-testid="option-all-shows"
                     >
@@ -160,13 +160,13 @@ export default function UsageDashboard() {
                       .map(show => (
                         <button
                           key={show.id}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-slate-700 ${selectedShowId === String(show.id) ? "bg-slate-700" : ""}`}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-muted ${selectedShowId === String(show.id) ? "bg-muted" : ""}`}
                           onClick={() => { setSelectedShowId(String(show.id)); setShowSelectorOpen(false); setShowSearch(""); }}
                           data-testid={`option-show-${show.id}`}
                         >
                           <div className="flex flex-col items-start gap-0.5">
                             <span className="truncate">{show.title}</span>
-                            <span className="text-xs text-slate-500">
+                            <span className="text-xs text-muted-foreground">
                               {new Date(show.createdAt).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                             </span>
                           </div>
@@ -177,7 +177,7 @@ export default function UsageDashboard() {
                 </ScrollArea>
               </PopoverContent>
             </Popover>
-            <span className="text-sm text-slate-400">{user?.firstName || user?.email}</span>
+            <span className="text-sm text-muted-foreground">{user?.firstName || user?.email}</span>
             <Button variant="outline" size="sm" onClick={() => logout()} data-testid="button-logout">
               Abmelden
             </Button>
@@ -185,22 +185,22 @@ export default function UsageDashboard() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-secondary/50 border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-400">Transcript</CardTitle>
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-cyan-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Transcript</CardTitle>
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-accent" />
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               <div className="text-lg sm:text-2xl font-bold text-white" data-testid="text-transcript-seconds">
                 {loading ? "..." : formatSeconds(stats?.transcriptSeconds || 0)}
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-1 hidden sm:block">Deepgram Transkription</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">Deepgram Transkription</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-secondary/50 border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-400">Voice</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Voice</CardTitle>
               <Mic className="h-3 w-3 sm:h-4 sm:w-4 text-purple-400" />
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
@@ -209,46 +209,46 @@ export default function UsageDashboard() {
               </div>
               <div className="hidden sm:flex items-center gap-4 mt-2 text-xs">
                 <div className="flex items-center gap-1">
-                  <Mic className="h-3 w-3 text-green-400" />
-                  <span className="text-slate-400">In:</span>
+                  <Mic className="h-3 w-3 text-success" />
+                  <span className="text-muted-foreground">In:</span>
                   <span className="text-white font-medium" data-testid="text-voice-in-seconds">
                     {loading ? "..." : formatSeconds(stats?.voiceInSeconds || 0)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Volume2 className="h-3 w-3 text-blue-400" />
-                  <span className="text-slate-400">Out:</span>
+                  <Volume2 className="h-3 w-3 text-primary" />
+                  <span className="text-muted-foreground">Out:</span>
                   <span className="text-white font-medium" data-testid="text-voice-out-seconds">
                     {loading ? "..." : formatSeconds(stats?.voiceOutSeconds || 0)}
                   </span>
                 </div>
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-1 hidden sm:block">Gemini Co-Host</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">Gemini Co-Host</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700 col-span-2 sm:col-span-1">
+          <Card className="bg-secondary/50 border-border col-span-2 sm:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-400">Gesamt</CardTitle>
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Gesamt</CardTitle>
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               <div className="text-lg sm:text-2xl font-bold text-white" data-testid="text-total-seconds">
                 {loading ? "..." : formatSeconds(totalSeconds)}
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-1 hidden sm:block">Alle Dienste kombiniert</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">Alle Dienste kombiniert</p>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-secondary/50 border-border">
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-400" />
+              <Calendar className="h-4 w-4 text-muted-foreground" />
               <CardTitle className="text-white">Nutzung pro Tag</CardTitle>
             </div>
             <Select value={days} onValueChange={setDays}>
-              <SelectTrigger className="w-32 bg-slate-700 border-slate-600" data-testid="select-days">
+              <SelectTrigger className="w-32 bg-muted border-border" data-testid="select-days">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -262,9 +262,9 @@ export default function UsageDashboard() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="h-64 flex items-center justify-center text-slate-400">Laden...</div>
+              <div className="h-64 flex items-center justify-center text-muted-foreground">Laden...</div>
             ) : chartData.length === 0 ? (
-              <div className="h-64 flex items-center justify-center text-slate-400">
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
                 Keine Nutzungsdaten vorhanden
               </div>
             ) : (
@@ -291,40 +291,40 @@ export default function UsageDashboard() {
         </Card>
 
         {/* Usage by Show Table */}
-        <Card className="bg-slate-800/50 border-slate-700 mt-6">
+        <Card className="bg-secondary/50 border-border mt-6">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Radio className="h-4 w-4 text-slate-400" />
+              <Radio className="h-4 w-4 text-muted-foreground" />
               <CardTitle className="text-white">Nutzung pro Sendung</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="h-32 flex items-center justify-center text-slate-400">Laden...</div>
+              <div className="h-32 flex items-center justify-center text-muted-foreground">Laden...</div>
             ) : showUsage.length === 0 ? (
-              <div className="h-32 flex items-center justify-center text-slate-400">
+              <div className="h-32 flex items-center justify-center text-muted-foreground">
                 Keine Nutzungsdaten vorhanden
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm" data-testid="table-show-usage">
                   <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Sendung</th>
-                      <th className="text-right py-3 px-4 text-slate-400 font-medium">Transcript</th>
-                      <th className="text-right py-3 px-4 text-slate-400 font-medium">Voice</th>
-                      <th className="text-right py-3 px-4 text-slate-400 font-medium">Gesamt</th>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">Sendung</th>
+                      <th className="text-right py-3 px-4 text-muted-foreground font-medium">Transcript</th>
+                      <th className="text-right py-3 px-4 text-muted-foreground font-medium">Voice</th>
+                      <th className="text-right py-3 px-4 text-muted-foreground font-medium">Gesamt</th>
                     </tr>
                   </thead>
                   <tbody>
                     {showUsage
                       .sort((a, b) => (b.transcriptSeconds + b.voiceSeconds) - (a.transcriptSeconds + a.voiceSeconds))
                       .map((item, index) => (
-                        <tr key={item.showId ?? 'none'} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                        <tr key={item.showId ?? 'none'} className="border-b border-border/50 hover:bg-muted/30">
                           <td className="py-3 px-4 text-white">
-                            {item.showTitle || <span className="text-slate-500 italic">Ohne Sendung</span>}
+                            {item.showTitle || <span className="text-muted-foreground italic">Ohne Sendung</span>}
                           </td>
-                          <td className="py-3 px-4 text-right text-cyan-400 font-mono">
+                          <td className="py-3 px-4 text-right text-accent font-mono">
                             {formatSeconds(item.transcriptSeconds)}
                           </td>
                           <td className="py-3 px-4 text-right text-purple-400 font-mono">

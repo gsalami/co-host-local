@@ -27,9 +27,9 @@ interface SpeakerMapping {
 }
 
 const SPEAKER_COLORS = [
-  "text-cyan-400",
+  "text-accent",
   "text-purple-400", 
-  "text-green-400",
+  "text-success",
   "text-orange-400",
   "text-pink-400",
   "text-yellow-400",
@@ -489,7 +489,7 @@ export default function VoiceAgent() {
         
         <div className="flex items-center gap-2 sm:gap-4">
            <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary font-mono text-[10px] sm:text-xs hidden sm:flex" data-testid="status-badge">
-             <div className={`size-1.5 rounded-full ${isRecording ? 'bg-green-400 animate-pulse' : isReady ? 'bg-primary' : 'bg-yellow-400'} mr-2`} />
+             <div className={`size-1.5 rounded-full ${isRecording ? 'bg-success animate-pulse' : isReady ? 'bg-primary' : 'bg-yellow-400'} mr-2`} />
              {isRecording ? "LISTENING" : isReady ? "READY" : isConnected ? "CONNECTING..." : "OFFLINE"}
            </Badge>
            <Button 
@@ -672,11 +672,11 @@ export default function VoiceAgent() {
              {isRecording && (
                <div className="flex items-center gap-3 z-10 md:hidden">
                  <span className={`flex items-center gap-1.5 text-xs ${
-                   deepgramStatus === 'connected' ? 'text-green-400' : 
+                   deepgramStatus === 'connected' ? 'text-success' : 
                    deepgramStatus === 'reconnecting' ? 'text-yellow-400' : 'text-red-400'
                  }`}>
                    <span className={`size-2 rounded-full ${
-                     deepgramStatus === 'connected' ? 'bg-green-400' : 
+                     deepgramStatus === 'connected' ? 'bg-success' : 
                      deepgramStatus === 'reconnecting' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'
                    }`} />
                    {deepgramStatus === 'connected' ? 'Transkription aktiv' : 
@@ -706,15 +706,15 @@ export default function VoiceAgent() {
              <div className="absolute right-8 top-1/2 -translate-y-1/2 text-xs font-mono text-muted-foreground hidden md:block">
                 {isRecording ? (
                   <div className="flex flex-col items-end gap-0.5">
-                    <span className="text-green-400">LIVE: {getSourceLabel(audioSource).toUpperCase()}</span>
+                    <span className="text-success">LIVE: {getSourceLabel(audioSource).toUpperCase()}</span>
                     <span className="text-primary text-lg font-bold">{formatTime(Math.round(speechDuration))}</span>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`flex items-center gap-1 ${
-                        deepgramStatus === 'connected' ? 'text-green-400' : 
+                        deepgramStatus === 'connected' ? 'text-success' : 
                         deepgramStatus === 'reconnecting' ? 'text-yellow-400' : 'text-red-400'
                       }`}>
                         <span className={`size-1.5 rounded-full ${
-                          deepgramStatus === 'connected' ? 'bg-green-400' : 
+                          deepgramStatus === 'connected' ? 'bg-success' : 
                           deepgramStatus === 'reconnecting' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'
                         }`} />
                         {deepgramStatus === 'connected' ? 'Deepgram OK' : 

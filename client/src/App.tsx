@@ -47,11 +47,11 @@ function Header() {
   };
   
   return (
-    <header className="shrink-0 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50 px-3 sm:px-4 py-2 z-50">
+    <header className="shrink-0 bg-card/80 backdrop-blur-sm border-b border-border/50 px-3 sm:px-4 py-2 z-50">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src={kubleLogo} alt="Kuble" className="h-5 sm:h-6" />
-          <span className="text-[10px] font-medium text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded hidden xs:inline">
+          <span className="text-[10px] font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded hidden xs:inline">
             BETA
           </span>
         </div>
@@ -63,8 +63,8 @@ function Header() {
               <button
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
                   location === path
-                    ? "bg-white/10 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                    ? "bg-primary/10 text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
                 data-testid={`nav-${path.slice(1) || "home"}`}
               >
@@ -78,8 +78,8 @@ function Header() {
             <button
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-sm transition-colors ${
                 location === "/help"
-                  ? "bg-white/10 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
+                  ? "bg-primary/10 text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
               data-testid="nav-help"
               title="Hilfe"
@@ -93,8 +93,8 @@ function Header() {
               <button
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
                   location === "/admin"
-                    ? "bg-green-500/20 text-green-400"
-                    : "text-green-400/70 hover:text-green-400 hover:bg-green-500/10"
+                    ? "bg-accent/20 text-accent"
+                    : "text-accent/70 hover:text-accent hover:bg-accent/10"
                 }`}
                 data-testid="nav-admin"
               >
@@ -109,13 +109,13 @@ function Header() {
         <div className="flex md:hidden items-center gap-2">
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <button className="p-2 text-gray-400 hover:text-white" data-testid="button-mobile-menu">
+              <button className="p-2 text-muted-foreground hover:text-foreground" data-testid="button-mobile-menu">
                 <Menu className="size-5" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-64 bg-slate-900 border-slate-700 p-0">
+            <SheetContent side="right" className="w-64 bg-card border-border p-0">
               <div className="flex flex-col h-full">
-                <div className="flex items-center p-4 border-b border-slate-700">
+                <div className="flex items-center p-4 border-b border-border">
                   <img src={kubleLogo} alt="Kuble" className="h-5" />
                 </div>
                 <nav className="flex-1 p-4 space-y-1">
@@ -125,8 +125,8 @@ function Header() {
                       onClick={() => handleNavClick(path)}
                       className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
                         location === path
-                          ? "bg-white/10 text-white"
-                          : "text-gray-400 hover:text-white hover:bg-white/5"
+                          ? "bg-primary/10 text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       }`}
                       data-testid={`nav-mobile-${path.slice(1) || "home"}`}
                     >
@@ -139,8 +139,8 @@ function Header() {
                     onClick={() => handleNavClick("/help")}
                     className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
                       location === "/help"
-                        ? "bg-white/10 text-white"
-                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                        ? "bg-primary/10 text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
                     data-testid="nav-mobile-help"
                   >
@@ -153,8 +153,8 @@ function Header() {
                       onClick={() => handleNavClick("/admin")}
                       className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-colors ${
                         location === "/admin"
-                          ? "bg-green-500/20 text-green-400"
-                          : "text-green-400/70 hover:text-green-400 hover:bg-green-500/10"
+                          ? "bg-accent/20 text-accent"
+                          : "text-accent/70 hover:text-accent hover:bg-accent/10"
                       }`}
                       data-testid="nav-mobile-admin"
                     >
@@ -199,8 +199,8 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-white text-lg">Laden...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-foreground text-lg">Laden...</div>
       </div>
     );
   }

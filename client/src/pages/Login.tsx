@@ -58,23 +58,23 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-900 border-slate-800">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-card border-border">
         <CardHeader className="space-y-4">
-          <div className="flex items-center justify-center gap-2 text-blue-400">
+          <div className="flex items-center justify-center gap-2 text-primary">
             <Radio className="size-8" />
           </div>
-          <CardTitle className="text-2xl text-center text-white">
+          <CardTitle className="text-2xl text-center text-foreground">
             Podcast Co-Host
           </CardTitle>
-          <CardDescription className="text-center text-gray-400">
+          <CardDescription className="text-center text-muted-foreground">
             Sign in to access your workspace
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-white">
+              <Label htmlFor="username" className="text-foreground">
                 Username
               </Label>
               <Input
@@ -84,11 +84,11 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-gray-500"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white">
+              <Label htmlFor="password" className="text-foreground">
                 Password
               </Label>
               <Input
@@ -98,12 +98,12 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-gray-500"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
               />
             </div>
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-primary hover:bg-primary/90"
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign in"}

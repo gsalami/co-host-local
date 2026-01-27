@@ -62,12 +62,12 @@ interface QuickAction {
 }
 
 const SPEAKER_COLORS = [
-  "text-blue-400",
+  "text-primary",
   "text-emerald-400", 
   "text-amber-400",
   "text-purple-400",
   "text-pink-400",
-  "text-cyan-400",
+  "text-accent",
 ];
 
 const UI_TRANSLATIONS = {
@@ -662,8 +662,8 @@ export default function CoHost() {
   const getSourceTypeIcon = (type: string) => {
     if (type === 'pdf') return <FileText className="size-4 text-red-400" />;
     if (type === 'json') return <FileCode className="size-4 text-yellow-400" />;
-    if (type === 'markdown') return <FileCode className="size-4 text-blue-400" />;
-    return <FileText className="size-4 text-gray-400" />;
+    if (type === 'markdown') return <FileCode className="size-4 text-primary" />;
+    return <FileText className="size-4 text-muted-foreground" />;
   };
   
   const toggleSourceSelection = (sourceId: number) => {
@@ -958,7 +958,7 @@ export default function CoHost() {
         
         <div className="flex items-center gap-2 sm:gap-4">
           <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary font-mono text-[10px] sm:text-xs hidden sm:flex" data-testid="status-badge-cohost">
-            <div className={`size-1.5 rounded-full ${isRecording ? 'bg-green-400 animate-pulse' : isReady ? 'bg-primary' : isConnected ? 'bg-yellow-400' : 'bg-red-400'} mr-2`} />
+            <div className={`size-1.5 rounded-full ${isRecording ? 'bg-success animate-pulse' : isReady ? 'bg-primary' : isConnected ? 'bg-yellow-400' : 'bg-red-400'} mr-2`} />
             {isRecording ? "LISTENING" : isReady ? "READY" : isConnected ? "CONNECTING" : "OFFLINE"}
           </Badge>
           
@@ -1356,7 +1356,7 @@ export default function CoHost() {
                     <FileText className="size-4" />
                     Transkript-Kontext ({transcriptSegments.length} Segmente)
                     {showSummary && (
-                      <Badge variant="outline" className="text-green-400 border-green-400/50 text-xs">
+                      <Badge variant="outline" className="text-success border-green-400/50 text-xs">
                         Optimiert
                       </Badge>
                     )}

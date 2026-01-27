@@ -161,12 +161,12 @@ export default function QuickActions() {
   const selectionMap = new Map(selections.map(s => [s.quickAction.id, s]));
 
   return (
-    <div className="h-full overflow-auto bg-slate-900 text-white p-4 md:p-6">
+    <div className="h-full overflow-auto bg-card text-white p-4 md:p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold" data-testid="text-page-title">Schnellaktionen</h1>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Verwalte deine Quick Actions für den Co-Host
             </p>
           </div>
@@ -180,11 +180,11 @@ export default function QuickActions() {
           </Button>
         </div>
 
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-secondary border-border">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
-                <Lock className="size-4 text-gray-400" />
+                <Lock className="size-4 text-muted-foreground" />
                 System-Aktionen
               </CardTitle>
               <Button
@@ -192,14 +192,14 @@ export default function QuickActions() {
                 size="sm"
                 onClick={() => loadDefaultsMutation.mutate()}
                 disabled={loadDefaultsMutation.isPending}
-                className="text-xs border-slate-600 hover:bg-slate-700"
+                className="text-xs border-border hover:bg-muted"
                 data-testid="button-load-defaults"
               >
                 <RotateCcw className="size-3 mr-1.5" />
                 {loadDefaultsMutation.isPending ? "Laden..." : "Defaults laden"}
               </Button>
             </div>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-muted-foreground">
               Standard-Aktionen, die für alle Benutzer verfügbar sind
             </CardDescription>
           </CardHeader>
@@ -210,15 +210,15 @@ export default function QuickActions() {
               return (
                 <div
                   key={action.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/50 border border-slate-600"
+                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
                   data-testid={`action-system-${action.id}`}
                 >
-                  <GripVertical className="size-4 text-gray-500 cursor-not-allowed" />
+                  <GripVertical className="size-4 text-muted-foreground cursor-not-allowed" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm" data-testid={`text-action-label-${action.id}`}>
                       {action.label}
                     </div>
-                    <div className="text-xs text-gray-400 truncate">
+                    <div className="text-xs text-muted-foreground truncate">
                       {action.prompt}
                     </div>
                   </div>
@@ -233,16 +233,16 @@ export default function QuickActions() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-secondary border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Eigene Aktionen</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardDescription className="text-muted-foreground">
               Selbst erstellte Aktionen, die du bearbeiten oder löschen kannst
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {(!allActions?.user || allActions.user.length === 0) ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <p>Noch keine eigenen Aktionen erstellt</p>
                 <p className="text-sm mt-1">Klicke oben auf "Neue Aktion" um zu beginnen</p>
               </div>
@@ -253,15 +253,15 @@ export default function QuickActions() {
                 return (
                   <div
                     key={action.id}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-slate-700/50 border border-slate-600"
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
                     data-testid={`action-user-${action.id}`}
                   >
-                    <GripVertical className="size-4 text-gray-400 cursor-grab" />
+                    <GripVertical className="size-4 text-muted-foreground cursor-grab" />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm" data-testid={`text-action-label-${action.id}`}>
                         {action.label}
                       </div>
-                      <div className="text-xs text-gray-400 truncate">
+                      <div className="text-xs text-muted-foreground truncate">
                         {action.prompt}
                       </div>
                     </div>
@@ -269,7 +269,7 @@ export default function QuickActions() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8 text-gray-400 hover:text-white"
+                        className="size-8 text-muted-foreground hover:text-white"
                         onClick={() => handleEdit(action)}
                         data-testid={`button-edit-${action.id}`}
                       >
@@ -278,7 +278,7 @@ export default function QuickActions() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8 text-gray-400 hover:text-red-400"
+                        className="size-8 text-muted-foreground hover:text-red-400"
                         onClick={() => deleteMutation.mutate(action.id)}
                         data-testid={`button-delete-${action.id}`}
                       >
@@ -299,31 +299,31 @@ export default function QuickActions() {
       </div>
 
       <Dialog open={isCreating || !!editingAction} onOpenChange={(open) => !open && handleCancel()}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+        <DialogContent className="bg-secondary border-border text-white">
           <DialogHeader>
             <DialogTitle>{editingAction ? "Aktion bearbeiten" : "Neue Aktion erstellen"}</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-muted-foreground">
               {editingAction ? "Bearbeite Label und Prompt deiner Aktion" : "Erstelle eine neue Quick Action für den Co-Host"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-gray-400 mb-1.5 block">Label (Button-Text)</label>
+              <label className="text-sm text-muted-foreground mb-1.5 block">Label (Button-Text)</label>
               <Input
                 value={formLabel}
                 onChange={(e) => setFormLabel(e.target.value)}
                 placeholder="z.B. Zusammenfassen"
-                className="bg-slate-700 border-slate-600"
+                className="bg-muted border-border"
                 data-testid="input-action-label"
               />
             </div>
             <div>
-              <label className="text-sm text-gray-400 mb-1.5 block">Prompt (Anweisung an KI)</label>
+              <label className="text-sm text-muted-foreground mb-1.5 block">Prompt (Anweisung an KI)</label>
               <Textarea
                 value={formPrompt}
                 onChange={(e) => setFormPrompt(e.target.value)}
                 placeholder="z.B. Bitte fasse zusammen, was bisher besprochen wurde."
-                className="bg-slate-700 border-slate-600 min-h-[100px]"
+                className="bg-muted border-border min-h-[100px]"
                 data-testid="input-action-prompt"
               />
             </div>

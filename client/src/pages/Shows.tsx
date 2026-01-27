@@ -180,10 +180,10 @@ export default function Shows() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white" data-testid="text-shows-title">Alle Sendungen</h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1">{filteredShows.length} Sendungen gefunden</p>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1">{filteredShows.length} Sendungen gefunden</p>
           </div>
           <div className="hidden sm:flex items-center gap-4">
-            <span className="text-sm text-slate-400">{user?.firstName || user?.email}</span>
+            <span className="text-sm text-muted-foreground">{user?.firstName || user?.email}</span>
             <Button variant="outline" size="sm" onClick={() => logout()} data-testid="button-logout">
               <LogOut className="h-4 w-4 mr-2" />
               Abmelden
@@ -193,12 +193,12 @@ export default function Shows() {
 
         <div className="mb-4 sm:mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Sendungen durchsuchen..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-              className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+              className="pl-10 bg-secondary border-border text-white placeholder:text-muted-foreground"
               data-testid="input-show-search"
             />
           </div>
@@ -206,10 +206,10 @@ export default function Shows() {
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="text-slate-400">Laden...</div>
+            <div className="text-muted-foreground">Laden...</div>
           </div>
         ) : visibleShows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
             <Radio className="h-12 w-12 mb-4 opacity-50" />
             <p>Keine Sendungen gefunden</p>
             {search && (
@@ -224,7 +224,7 @@ export default function Shows() {
               {visibleShows.map(show => (
                 <Card 
                   key={show.id}
-                  className="bg-slate-800/50 border-slate-700 hover:border-primary/50 hover:bg-slate-800 transition-all group"
+                  className="bg-secondary/50 border-border hover:border-primary/50 hover:bg-secondary transition-all group"
                   data-testid={`card-show-${show.id}`}
                 >
                   <CardContent className="p-3 sm:p-4">
@@ -236,7 +236,7 @@ export default function Shows() {
                             {show.title}
                           </h3>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-500">
+                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>{formatDate(show.createdAt)}</span>
                         </div>
@@ -247,17 +247,17 @@ export default function Shows() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 text-slate-400 hover:text-white"
+                            className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 text-muted-foreground hover:text-white"
                             onClick={(e) => e.preventDefault()}
                             data-testid={`button-menu-${show.id}`}
                           >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
+                        <DropdownMenuContent align="end" className="bg-secondary border-border">
                           <DropdownMenuItem 
                             onClick={(e) => openEditDialog(show, e as unknown as React.MouseEvent)}
-                            className="text-slate-200 focus:bg-slate-700 focus:text-white cursor-pointer"
+                            className="text-slate-200 focus:bg-muted focus:text-white cursor-pointer"
                             data-testid={`button-edit-${show.id}`}
                           >
                             <Edit className="h-4 w-4 mr-2" />
@@ -265,7 +265,7 @@ export default function Shows() {
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={(e) => handleExport(show, "txt", e as unknown as React.MouseEvent)}
-                            className="text-slate-200 focus:bg-slate-700 focus:text-white cursor-pointer"
+                            className="text-slate-200 focus:bg-muted focus:text-white cursor-pointer"
                             data-testid={`button-export-txt-${show.id}`}
                           >
                             <FileText className="h-4 w-4 mr-2" />
@@ -273,7 +273,7 @@ export default function Shows() {
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={(e) => handleExport(show, "json", e as unknown as React.MouseEvent)}
-                            className="text-slate-200 focus:bg-slate-700 focus:text-white cursor-pointer"
+                            className="text-slate-200 focus:bg-muted focus:text-white cursor-pointer"
                             data-testid={`button-export-json-${show.id}`}
                           >
                             <FileJson className="h-4 w-4 mr-2" />
@@ -300,7 +300,7 @@ export default function Shows() {
                 <Button 
                   variant="outline" 
                   onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
-                  className="bg-slate-800 border-slate-600 hover:bg-slate-700"
+                  className="bg-secondary border-border hover:bg-muted"
                   data-testid="button-load-more"
                 >
                   Mehr laden ({filteredShows.length - visibleCount} weitere)
@@ -313,7 +313,7 @@ export default function Shows() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-700 w-[calc(100%-2rem)] max-w-md mx-auto p-4 sm:p-6">
+        <DialogContent className="bg-card border-border w-[calc(100%-2rem)] max-w-md mx-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-white text-base sm:text-lg">Sendung bearbeiten</DialogTitle>
           </DialogHeader>
@@ -323,7 +323,7 @@ export default function Shows() {
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleUpdateShow()}
-              className="bg-slate-800 border-slate-700 text-white w-full text-sm sm:text-base h-10 sm:h-11"
+              className="bg-secondary border-border text-white w-full text-sm sm:text-base h-10 sm:h-11"
               data-testid="input-edit-show-title"
             />
             <Button 
@@ -340,15 +340,15 @@ export default function Shows() {
 
       {/* Delete Confirmation */}
       <AlertDialog open={deleteShowId !== null} onOpenChange={(open) => !open && setDeleteShowId(null)}>
-        <AlertDialogContent className="bg-slate-900 border-slate-700 w-[calc(100%-2rem)] max-w-md mx-auto p-4 sm:p-6">
+        <AlertDialogContent className="bg-card border-border w-[calc(100%-2rem)] max-w-md mx-auto p-4 sm:p-6">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white text-base sm:text-lg">Sendung löschen?</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400 text-sm sm:text-base">
+            <AlertDialogDescription className="text-muted-foreground text-sm sm:text-base">
               Diese Aktion kann nicht rückgängig gemacht werden. Die Sendung "{deleteShowTitle}" und alle zugehörigen Transkripte werden dauerhaft gelöscht.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 w-full sm:w-auto h-10 text-sm sm:text-base" data-testid="button-cancel-delete">
+            <AlertDialogCancel className="bg-secondary border-border text-white hover:bg-muted w-full sm:w-auto h-10 text-sm sm:text-base" data-testid="button-cancel-delete">
               Abbrechen
             </AlertDialogCancel>
             <AlertDialogAction 

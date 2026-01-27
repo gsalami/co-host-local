@@ -369,7 +369,7 @@ export default function AdminDashboard() {
         <div className="p-4 sm:p-6 max-w-6xl mx-auto flex flex-col items-center justify-center h-full gap-4">
           <Shield className="h-12 w-12 sm:h-16 sm:w-16 text-red-400" />
           <h1 className="text-xl sm:text-2xl font-bold text-white">Zugriff verweigert</h1>
-          <p className="text-slate-400 text-sm sm:text-base">Sie haben keine Administratorrechte.</p>
+          <p className="text-muted-foreground text-sm sm:text-base">Sie haben keine Administratorrechte.</p>
         </div>
       </div>
     );
@@ -381,10 +381,10 @@ export default function AdminDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
           <div>
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" />
+              <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-success" />
               <h1 className="text-xl sm:text-2xl font-bold text-white" data-testid="text-admin-title">Admin-Dashboard</h1>
             </div>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1">Benutzer und Nutzung verwalten</p>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1">Benutzer und Nutzung verwalten</p>
           </div>
           <div className="hidden sm:flex items-center gap-4">
             <Button 
@@ -397,7 +397,7 @@ export default function AdminDashboard() {
               <RefreshCw className={`h-4 w-4 mr-2 ${syncingStripe ? 'animate-spin' : ''}`} />
               {syncingStripe ? 'Sync...' : 'Stripe Sync'}
             </Button>
-            <span className="text-sm text-slate-400">{user?.firstName || user?.email}</span>
+            <span className="text-sm text-muted-foreground">{user?.firstName || user?.email}</span>
             <Button variant="outline" size="sm" onClick={() => logout()} data-testid="button-logout">
               Abmelden
             </Button>
@@ -405,70 +405,70 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-secondary/50 border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-400">Benutzer</CardTitle>
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-blue-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Benutzer</CardTitle>
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               <div className="text-lg sm:text-2xl font-bold text-white" data-testid="text-user-count">
                 {loading ? "..." : users.length}
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-1 hidden sm:block">Registrierte Benutzer</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">Registrierte Benutzer</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-secondary/50 border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-400">Transcript</CardTitle>
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-cyan-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Transcript</CardTitle>
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-accent" />
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               <div className="text-lg sm:text-2xl font-bold text-white" data-testid="text-total-transcript">
                 {loading ? "..." : formatSeconds(totalTranscriptSeconds)}
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-1 hidden sm:block">Transkription</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">Transkription</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-secondary/50 border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-400">Voice</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Voice</CardTitle>
               <Mic className="h-3 w-3 sm:h-4 sm:w-4 text-purple-400" />
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               <div className="text-lg sm:text-2xl font-bold text-white" data-testid="text-total-voice">
                 {loading ? "..." : formatSeconds(totalVoiceSeconds)}
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-1 hidden sm:block">Co-Host</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">Co-Host</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-secondary/50 border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-400">Gesamt</CardTitle>
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Gesamt</CardTitle>
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               <div className="text-lg sm:text-2xl font-bold text-white" data-testid="text-total-usage">
                 {loading ? "..." : formatSeconds(totalSeconds)}
               </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mt-1 hidden sm:block">Alle Dienste</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 hidden sm:block">Alle Dienste</p>
             </CardContent>
           </Card>
         </div>
 
-        <Card className="bg-slate-800/50 border-slate-700 mb-4 sm:mb-6">
+        <Card className="bg-secondary/50 border-border mb-4 sm:mb-6">
           <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center gap-2">
-              <Plus className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
               <CardTitle className="text-white text-sm sm:text-base">Credits manuell hinzufügen</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white" data-testid="select-add-credits-user">
+                <SelectTrigger className="bg-muted border-border text-white" data-testid="select-add-credits-user">
                   <SelectValue placeholder="Benutzer wählen..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -486,7 +486,7 @@ export default function AdminDashboard() {
                 placeholder="Transcript Min"
                 value={addTranscriptMinutes}
                 onChange={(e) => setAddTranscriptMinutes(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-muted border-border text-white"
                 data-testid="input-add-transcript-minutes"
               />
               <Input
@@ -494,7 +494,7 @@ export default function AdminDashboard() {
                 placeholder="Voice Min"
                 value={addVoiceMinutes}
                 onChange={(e) => setAddVoiceMinutes(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
+                className="bg-muted border-border text-white"
                 data-testid="input-add-voice-minutes"
               />
               <Button
@@ -508,7 +508,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700 mb-4 sm:mb-6">
+        <Card className="bg-secondary/50 border-border mb-4 sm:mb-6">
           <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center gap-2">
               <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-amber-400" />
@@ -521,7 +521,7 @@ export default function AdminDashboard() {
                 placeholder="Stripe Session-ID (cs_live_...)"
                 value={sessionIdInput}
                 onChange={(e) => setSessionIdInput(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white flex-1"
+                className="bg-muted border-border text-white flex-1"
                 data-testid="input-session-id"
               />
               <Button
@@ -532,47 +532,47 @@ export default function AdminDashboard() {
                 {processingPurchase ? "Verarbeite..." : "Verarbeiten"}
               </Button>
             </div>
-            <p className="text-slate-500 text-xs mt-2">Session-ID aus Stripe Dashboard oder credit_purchases Tabelle</p>
+            <p className="text-muted-foreground text-xs mt-2">Session-ID aus Stripe Dashboard oder credit_purchases Tabelle</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700 mb-4 sm:mb-6">
+        <Card className="bg-secondary/50 border-border mb-4 sm:mb-6">
           <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center gap-2">
-              <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 text-blue-400" />
+              <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
               <CardTitle className="text-white text-sm sm:text-base">Käufe verwalten</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="px-0 sm:px-6 pb-3 sm:pb-6">
             {purchases.length === 0 ? (
-              <div className="h-24 flex items-center justify-center text-slate-400 text-sm">
+              <div className="h-24 flex items-center justify-center text-muted-foreground text-sm">
                 Keine Käufe vorhanden
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table className="text-xs sm:text-sm">
                   <TableHeader>
-                    <TableRow className="border-slate-700">
-                      <TableHead className="text-slate-400 whitespace-nowrap">Datum</TableHead>
-                      <TableHead className="text-slate-400 hidden sm:table-cell">Benutzer</TableHead>
-                      <TableHead className="text-slate-400 whitespace-nowrap">Paket</TableHead>
-                      <TableHead className="text-slate-400 text-right whitespace-nowrap hidden sm:table-cell">Preis</TableHead>
-                      <TableHead className="text-slate-400 whitespace-nowrap">Status</TableHead>
+                    <TableRow className="border-border">
+                      <TableHead className="text-muted-foreground whitespace-nowrap">Datum</TableHead>
+                      <TableHead className="text-muted-foreground hidden sm:table-cell">Benutzer</TableHead>
+                      <TableHead className="text-muted-foreground whitespace-nowrap">Paket</TableHead>
+                      <TableHead className="text-muted-foreground text-right whitespace-nowrap hidden sm:table-cell">Preis</TableHead>
+                      <TableHead className="text-muted-foreground whitespace-nowrap">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {purchases.map(p => (
-                      <TableRow key={p.id} className="border-slate-700" data-testid={`row-purchase-${p.id}`}>
-                        <TableCell className="text-slate-300 whitespace-nowrap">
+                      <TableRow key={p.id} className="border-border" data-testid={`row-purchase-${p.id}`}>
+                        <TableCell className="text-foreground whitespace-nowrap">
                           {new Date(p.createdAt).toLocaleDateString("de-CH", {
                             day: "2-digit",
                             month: "2-digit",
                             year: "2-digit"
                           })}
                         </TableCell>
-                        <TableCell className="text-slate-300 hidden sm:table-cell">{getUserEmail(p.userId)}</TableCell>
+                        <TableCell className="text-foreground hidden sm:table-cell">{getUserEmail(p.userId)}</TableCell>
                         <TableCell className="text-white font-medium">{p.packageName}</TableCell>
-                        <TableCell className="text-right text-green-400 hidden sm:table-cell">CHF {(p.amountChf / 100).toFixed(0)}</TableCell>
+                        <TableCell className="text-right text-success hidden sm:table-cell">CHF {(p.amountChf / 100).toFixed(0)}</TableCell>
                         <TableCell>
                           <Select
                             value={p.status}
@@ -580,7 +580,7 @@ export default function AdminDashboard() {
                             disabled={updatingPurchaseId === p.id}
                           >
                             <SelectTrigger 
-                              className="w-24 sm:w-32 h-7 sm:h-8 bg-slate-700 border-slate-600 text-xs sm:text-sm" 
+                              className="w-24 sm:w-32 h-7 sm:h-8 bg-muted border-border text-xs sm:text-sm" 
                               data-testid={`select-purchase-status-${p.id}`}
                             >
                               <SelectValue />
@@ -610,33 +610,33 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-secondary/50 border-border">
           <CardHeader className="px-3 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center gap-2">
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400" />
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               <CardTitle className="text-white text-sm sm:text-base">Benutzer-Übersicht</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="px-0 sm:px-6 pb-3 sm:pb-6">
             {loading ? (
-              <div className="h-40 sm:h-64 flex items-center justify-center text-slate-400 text-sm">Laden...</div>
+              <div className="h-40 sm:h-64 flex items-center justify-center text-muted-foreground text-sm">Laden...</div>
             ) : users.length === 0 ? (
-              <div className="h-40 sm:h-64 flex items-center justify-center text-slate-400 text-sm">
+              <div className="h-40 sm:h-64 flex items-center justify-center text-muted-foreground text-sm">
                 Keine Benutzer vorhanden
               </div>
             ) : (
               <div className="overflow-x-auto">
               <Table className="text-xs sm:text-sm">
                 <TableHeader>
-                  <TableRow className="border-slate-700">
-                    <TableHead className="text-slate-400 whitespace-nowrap">Benutzer</TableHead>
-                    <TableHead className="text-slate-400 hidden md:table-cell">E-Mail</TableHead>
-                    <TableHead className="text-slate-400 whitespace-nowrap">Rolle</TableHead>
-                    <TableHead className="text-slate-400 text-right whitespace-nowrap">Credits T</TableHead>
-                    <TableHead className="text-slate-400 text-right whitespace-nowrap">Credits V</TableHead>
-                    <TableHead className="text-slate-400 text-right whitespace-nowrap hidden sm:table-cell">Nutzung T</TableHead>
-                    <TableHead className="text-slate-400 text-right whitespace-nowrap hidden sm:table-cell">Nutzung V</TableHead>
-                    <TableHead className="text-slate-400 hidden lg:table-cell">Registriert</TableHead>
+                  <TableRow className="border-border">
+                    <TableHead className="text-muted-foreground whitespace-nowrap">Benutzer</TableHead>
+                    <TableHead className="text-muted-foreground hidden md:table-cell">E-Mail</TableHead>
+                    <TableHead className="text-muted-foreground whitespace-nowrap">Rolle</TableHead>
+                    <TableHead className="text-muted-foreground text-right whitespace-nowrap">Credits T</TableHead>
+                    <TableHead className="text-muted-foreground text-right whitespace-nowrap">Credits V</TableHead>
+                    <TableHead className="text-muted-foreground text-right whitespace-nowrap hidden sm:table-cell">Nutzung T</TableHead>
+                    <TableHead className="text-muted-foreground text-right whitespace-nowrap hidden sm:table-cell">Nutzung V</TableHead>
+                    <TableHead className="text-muted-foreground hidden lg:table-cell">Registriert</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -644,19 +644,19 @@ export default function AdminDashboard() {
                     const usage = getUserUsage(u.id);
                     const credits = userCreditsMap[u.id];
                     return (
-                      <TableRow key={u.id} className="border-slate-700" data-testid={`row-user-${u.id}`}>
+                      <TableRow key={u.id} className="border-border" data-testid={`row-user-${u.id}`}>
                         <TableCell className="text-white font-medium whitespace-nowrap">
                           {u.firstName && u.lastName 
                             ? `${u.firstName} ${u.lastName}` 
                             : u.firstName || u.email?.split("@")[0] || "Unbekannt"}
                         </TableCell>
-                        <TableCell className="text-slate-300 hidden md:table-cell">{u.email || "-"}</TableCell>
+                        <TableCell className="text-foreground hidden md:table-cell">{u.email || "-"}</TableCell>
                         <TableCell>
                           <Select
                             value={u.role}
                             onValueChange={(value) => handleRoleChange(u.id, value)}
                           >
-                            <SelectTrigger className="w-20 sm:w-28 h-7 sm:h-8 bg-slate-700 border-slate-600 text-xs sm:text-sm" data-testid={`select-role-${u.id}`}>
+                            <SelectTrigger className="w-20 sm:w-28 h-7 sm:h-8 bg-muted border-border text-xs sm:text-sm" data-testid={`select-role-${u.id}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -676,11 +676,11 @@ export default function AdminDashboard() {
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell className="text-right text-green-400 whitespace-nowrap">{credits ? formatSeconds(credits.transcriptSeconds) : "-"}</TableCell>
-                        <TableCell className="text-right text-green-400 whitespace-nowrap">{credits ? formatSeconds(credits.voiceSeconds) : "-"}</TableCell>
-                        <TableCell className="text-right text-cyan-400 whitespace-nowrap hidden sm:table-cell">{formatSeconds(usage.transcriptSeconds)}</TableCell>
+                        <TableCell className="text-right text-success whitespace-nowrap">{credits ? formatSeconds(credits.transcriptSeconds) : "-"}</TableCell>
+                        <TableCell className="text-right text-success whitespace-nowrap">{credits ? formatSeconds(credits.voiceSeconds) : "-"}</TableCell>
+                        <TableCell className="text-right text-accent whitespace-nowrap hidden sm:table-cell">{formatSeconds(usage.transcriptSeconds)}</TableCell>
                         <TableCell className="text-right text-purple-400 whitespace-nowrap hidden sm:table-cell">{formatSeconds(usage.voiceSeconds)}</TableCell>
-                        <TableCell className="text-slate-400 hidden lg:table-cell whitespace-nowrap">
+                        <TableCell className="text-muted-foreground hidden lg:table-cell whitespace-nowrap">
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString("de-CH", { 
                             day: "2-digit", 
                             month: "2-digit", 

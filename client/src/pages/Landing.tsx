@@ -133,13 +133,13 @@ export default function Landing() {
   const visiblePackages = showAllPackages ? PRICING_PACKAGES : PRICING_PACKAGES.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-background text-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/10 to-slate-950" />
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-primary text-sm mb-6">
               <Radio className="size-4" />
               <span>Für Podcast-Produzenten</span>
             </div>
@@ -148,7 +148,7 @@ export default function Landing() {
               Podcast aufnehmen mit Live-Transkription und AI Co-Host
             </h1>
             
-            <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
               Zeichne deine Gespräche auf, sieh das Transkript in Echtzeit und nutze einen KI-Assistenten, 
               der mithört und auf Fragen antwortet.
             </p>
@@ -157,7 +157,7 @@ export default function Landing() {
               <Link href="/login">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary text-white px-8"
                   data-testid="button-cta-primary"
                 >
                   Kostenlos ausprobieren
@@ -171,7 +171,7 @@ export default function Landing() {
               </a>
             </div>
             
-            <p className="mt-4 text-sm text-gray-500">
+            <p className="mt-4 text-sm text-muted-foreground">
               5 Minuten Transkription + 5 Minuten Voice gratis
             </p>
           </div>
@@ -179,17 +179,17 @@ export default function Landing() {
       </section>
 
       {/* How it Works */}
-      <section className="py-16 border-t border-slate-800">
+      <section className="py-16 border-t border-border">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">So funktioniert's</h2>
           
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mx-auto mb-4">
+              <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center text-xl font-bold mx-auto mb-4">
                 1
               </div>
               <h3 className="text-lg font-semibold mb-2">Aufnehmen</h3>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Starte eine Aufnahme mit deinem Mikrofon oder Tab-Audio. Das Gespräch wird live erfasst.
               </p>
             </div>
@@ -199,7 +199,7 @@ export default function Landing() {
                 2
               </div>
               <h3 className="text-lg font-semibold mb-2">Transkribieren</h3>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Die Sprache wird in Echtzeit in Text umgewandelt. Du siehst sofort, was gesagt wurde.
               </p>
             </div>
@@ -209,7 +209,7 @@ export default function Landing() {
                 3
               </div>
               <h3 className="text-lg font-semibold mb-2">Mit Co-Host moderieren</h3>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Der AI Co-Host hört mit und kann auf Zuruf Fragen beantworten oder Themen recherchieren.
               </p>
             </div>
@@ -218,24 +218,24 @@ export default function Landing() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-16 bg-slate-900/50">
+      <section id="features" className="py-16 bg-card/50">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">Funktionen</h2>
-          <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
             Alles, was du für die Podcast-Produktion brauchst, in einer Anwendung.
           </p>
           
           <div className="grid md:grid-cols-2 gap-6">
             {FEATURES.map((feature) => (
-              <Card key={feature.title} className="bg-slate-800/50 border-slate-700">
+              <Card key={feature.title} className="bg-secondary/50 border-border">
                 <CardHeader>
                   <div className="flex items-start gap-4">
                     <div className="p-2 rounded-lg bg-blue-500/10">
-                      <feature.icon className="size-6 text-blue-400" />
+                      <feature.icon className="size-6 text-primary" />
                     </div>
                     <div>
                       <CardTitle className="text-lg text-white">{feature.title}</CardTitle>
-                      <p className="text-gray-400 mt-1">{feature.description}</p>
+                      <p className="text-muted-foreground mt-1">{feature.description}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -256,16 +256,16 @@ export default function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-16 border-t border-slate-800">
+      <section id="pricing" className="py-16 border-t border-border">
         <div className="max-w-6xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">Pakete</h2>
-          <p className="text-gray-400 text-center mb-8 max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-center mb-8 max-w-2xl mx-auto">
             Keine Abos, keine versteckten Kosten. Kaufe Credits, wenn du sie brauchst.
           </p>
           
           <div className="inline-flex items-center gap-2 justify-center w-full mb-8">
-            <Zap className="size-4 text-green-400" />
-            <span className="text-green-400 text-sm font-medium">
+            <Zap className="size-4 text-success" />
+            <span className="text-success text-sm font-medium">
               5 Min Transkription + 5 Min Voice gratis zum Start
             </span>
           </div>
@@ -274,19 +274,19 @@ export default function Landing() {
             {visiblePackages.map((pkg) => (
               <Card 
                 key={pkg.id} 
-                className={`relative bg-slate-800/50 border-slate-700 ${pkg.popular ? 'ring-2 ring-blue-500' : ''}`}
+                className={`relative bg-secondary/50 border-border ${pkg.popular ? 'ring-2 ring-blue-500' : ''}`}
                 data-testid={`card-package-${pkg.id}`}
               >
                 {pkg.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full">
+                    <span className="bg-primary text-white text-xs px-3 py-1 rounded-full">
                       Beliebt
                     </span>
                   </div>
                 )}
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xl text-white">{pkg.name}</CardTitle>
-                  <p className="text-sm text-gray-400">{pkg.description}</p>
+                  <p className="text-sm text-muted-foreground">{pkg.description}</p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
@@ -294,7 +294,7 @@ export default function Landing() {
                   </div>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2 text-gray-300">
-                      <FileText className="size-4 text-blue-400" />
+                      <FileText className="size-4 text-primary" />
                       {pkg.transcriptMinutes} Min Transkription
                     </li>
                     <li className="flex items-center gap-2 text-gray-300">
@@ -312,7 +312,7 @@ export default function Landing() {
               <Button 
                 variant="ghost" 
                 onClick={() => setShowAllPackages(true)}
-                className="text-gray-400 hover:text-white"
+                className="text-muted-foreground hover:text-white"
                 data-testid="button-show-all-packages"
               >
                 Alle Pakete anzeigen
@@ -325,7 +325,7 @@ export default function Landing() {
             <Link href="/login">
               <Button
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary"
                 data-testid="button-cta-pricing"
               >
                 Jetzt starten
@@ -337,9 +337,9 @@ export default function Landing() {
       </section>
 
       {/* Trust Signals */}
-      <section className="py-12 bg-slate-900/30">
+      <section className="py-12 bg-card/30">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-400">
+          <div className="flex flex-wrap justify-center gap-8 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Shield className="size-5 text-green-500" />
               <span>Sichere Zahlung via Stripe</span>
@@ -357,7 +357,7 @@ export default function Landing() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-16 border-t border-slate-800">
+      <section id="faq" className="py-16 border-t border-border">
         <div className="max-w-3xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">Häufige Fragen</h2>
           
@@ -366,13 +366,13 @@ export default function Landing() {
               <AccordionItem 
                 key={index} 
                 value={`faq-${index}`}
-                className="bg-slate-800/30 border border-slate-700 rounded-lg px-4"
+                className="bg-secondary/30 border border-border rounded-lg px-4"
                 data-testid={`faq-item-${index}`}
               >
                 <AccordionTrigger className="text-left text-white hover:no-underline" data-testid={`faq-trigger-${index}`}>
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-gray-400">
+                <AccordionContent className="text-muted-foreground">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>
@@ -382,15 +382,15 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-slate-800">
+      <footer className="py-12 border-t border-border">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
-              <Radio className="size-5 text-blue-400" />
+              <Radio className="size-5 text-primary" />
               <span className="font-semibold">Podcast Co-Host</span>
             </div>
             
-            <div className="flex gap-6 text-sm text-gray-400">
+            <div className="flex gap-6 text-sm text-muted-foreground">
               <a href="https://rtk.kuble.com" target="_blank" rel="noopener noreferrer" className="hover:text-white" data-testid="link-footer-connect">
                 Connect with us
               </a>
@@ -399,7 +399,7 @@ export default function Landing() {
               </a>
             </div>
             
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Ein Produkt von Kuble
             </p>
           </div>

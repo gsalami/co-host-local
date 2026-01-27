@@ -23,7 +23,7 @@
       "title": "Migrate PostgreSQL to SQLite with Drizzle ORM",
       "description": "Replace PostgreSQL with better-sqlite3/libsql. Update drizzle.config.ts for SQLite dialect. Migrate all schema definitions (shared/schema.ts) to SQLite-compatible types. Update server/db.ts and server/storage.ts. Remove pg, connect-pg-simple dependencies. Add better-sqlite3. Ensure all queries work with SQLite. Create initial migration.",
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "ARCH-4",

@@ -4,7 +4,8 @@ Started: Tue Jan 27 14:13:30 CET 2026
 
 ## Codebase Patterns
 - Auth system uses simple username/password from env vars (AUTH_USER, AUTH_PASSWORD)
-- User sessions stored in PostgreSQL sessions table (for WebSocket compatibility)
+- User sessions stored in SQLite sessions table (for WebSocket compatibility)
+- Database: SQLite at ./data/cohost.db using better-sqlite3 and Drizzle ORM
 - Session data structure: `sessionData.passport.user` contains user ID (not claims.sub)
 - All routes access user via `req.user.id` (not `req.user.claims.sub`)
 - Express.User type extended in server/types.d.ts to match DbUser from shared/models/auth
@@ -40,4 +41,31 @@ Started: Tue Jan 27 14:13:30 CET 2026
   - App now runs without billing restrictions - all routes and features are freely accessible
   - Removed credit-checking middleware (isAllowedEmail) that was gating API access
   - WebSocket handlers had credit deduction logic that needed removal
+---
+
+## 2026-01-27 18:00 - ARCH-3
+- What was implemented: Migrated PostgreSQL to SQLite with Drizzle ORM
+- Files changed:
+  - Modified: drizzle.config.ts (changed to SQLite dialect, db path: ./data/cohost.db)
+  - Modified: shared/schema.ts (all pgTable -> sqliteTable, serial -> integer autoincrement, varchar -> text, timestamp -> integer with mode timestamp)
+  - Modified: shared/models/auth.ts (same migrations for users and sessions tables)
+  - Modified: server/db.ts (replaced pg Pool with better-sqlite3 Database)
+  - Modified: server/storage.ts (replaced ILIKE with LIKE, removed credit-related methods)
+  - Modified: server/routes.ts (fixed Set iteration for downlevel compatibility)
+  - Modified: server/index.ts (removed runMigrations call)
+  - Modified: .env.example (removed DATABASE_URL, added GOOGLE_AI_API_KEY and ELEVENLABS_API_KEY)
+  - Modified: package.json (removed pg, connect-pg-simple; added better-sqlite3)
+  - Deleted: server/migrate.ts (old PostgreSQL migration script)
+  - Created: migrations/0000_lazy_inhumans.sql (fresh SQLite migration)
+  - Created: data/cohost.db (SQLite database file)
+- **Learnings for future iterations:**
+  - SQLite uses different type system: text (not varchar), integer with mode timestamp (not timestamp), integer autoincrement (not serial)
+  - SQLite default functions differ: unixepoch() instead of CURRENT_TIMESTAMP, randomblob(16) for UUIDs instead of gen_random_uuid()
+  - SQLite uses LIKE (case-insensitive by default) instead of PostgreSQL's ILIKE
+  - better-sqlite3 requires explicit "foreign_keys = ON" pragma
+  - drizzle-kit generate needs empty migrations folder when switching dialects (old snapshots cause version errors)
+  - Data directory must exist before drizzle-kit migrate runs with SQLite
+  - jsonb in PostgreSQL becomes text with mode: "json" in SQLite
+  - Session storage (for WebSocket auth) still works with SQLite - no changes needed
+  - Removed leftover credit system methods from storage.ts (they referenced deleted tables from ARCH-2)
 ---

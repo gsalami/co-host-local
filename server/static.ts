@@ -10,10 +10,18 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  app.use("/co-host", express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
+  // fall through to index.html if the file doesn't exist (SPA routing)
+  app.get("/co-host", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
+  });
+  app.get("/co-host/*", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  });
+
+  // Redirect root to /co-host
+  app.get("/", (_req, res) => {
+    res.redirect("/co-host");
   });
 }

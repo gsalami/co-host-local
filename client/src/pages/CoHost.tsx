@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/config";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
@@ -112,6 +113,20 @@ function getSpeakerFromSegment(segment: { speaker?: number | null; metadata?: st
   }
 }
 
+// Translation map for default quick actions (German → English)
+const quickActionTranslations: Record<string, { label: string; prompt: string }> = {
+  "Zusammenfassen": { label: "Summarize", prompt: "Please summarize what has been discussed so far." },
+  "Recherchieren": { label: "Research", prompt: "Can you research what we just discussed on the internet?" },
+  "Erklären": { label: "Explain", prompt: "Please explain the last statement in more detail." },
+};
+
+function getTranslatedAction(action: { label: string; prompt: string }, language: string) {
+  if (language.startsWith("de")) return action;
+  const translation = quickActionTranslations[action.label];
+  if (translation) return translation;
+  return action;
+}
+
 export default function CoHost() {
   const [shows, setShows] = useState<Show[]>([]);
   const [currentShow, setCurrentShow] = useState<Show | null>(null);
@@ -159,6 +174,11 @@ export default function CoHost() {
   
   // Voice preference state
   const [voicePreference, setVoicePreference] = useState<"Kore" | "Puck">("Kore");
+  const [sttProvider, setSttProvider] = useState<"deepgram" | "elevenlabs">(() => {
+    if (typeof window === "undefined") return "deepgram";
+    const stored = window.localStorage.getItem("stt-provider");
+    return stored === "elevenlabs" ? "elevenlabs" : "deepgram";
+  });
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
@@ -225,7 +245,7 @@ export default function CoHost() {
     fetchShows();
     fetchSystemPrompts();
     // Fetch voice preference
-    fetch("/api/user/voice-preference")
+    fetch(apiUrl("/api/user/voice-preference"))
       .then(res => res.json())
       .then(data => {
         if (data.voicePreference) {
@@ -234,6 +254,12 @@ export default function CoHost() {
       })
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("stt-provider", sttProvider);
+    }
+  }, [sttProvider]);
 
   // Reset isStarting when session becomes ready
   useEffect(() => {
@@ -336,7 +362,7 @@ export default function CoHost() {
 
   const fetchShows = async () => {
     try {
-      const res = await fetch("/api/shows");
+      const res = await fetch(apiUrl("/api/shows"));
       const data = await res.json();
       setShows(data);
     } catch (error) {
@@ -346,7 +372,7 @@ export default function CoHost() {
 
   const fetchSystemPrompts = async () => {
     try {
-      const res = await fetch("/api/system-prompts");
+      const res = await fetch(apiUrl("/api/system-prompts"));
       const data = await res.json();
       setSavedPrompts(data);
     } catch (error) {
@@ -356,7 +382,7 @@ export default function CoHost() {
 
   const fetchTranscripts = async (showId: number) => {
     try {
-      const res = await fetch(`/api/shows/${showId}/transcripts`);
+      const res = await fetch(apiUrl(`/api/shows/${showId}/transcripts`));
       const data = await res.json();
       setTranscriptSegments(data);
     } catch (error) {
@@ -366,7 +392,7 @@ export default function CoHost() {
 
   const fetchSpeakerMappings = async (showId: number) => {
     try {
-      const res = await fetch(`/api/shows/${showId}/speakers`);
+      const res = await fetch(apiUrl(`/api/shows/${showId}/speakers`));
       if (!res.ok) {
         setSpeakerMappings([]);
         return;
@@ -382,7 +408,7 @@ export default function CoHost() {
   const saveSpeakerMapping = async (speakerIndex: number, displayName: string) => {
     if (!currentShow) return;
     try {
-      await fetch(`/api/shows/${currentShow.id}/speakers/${speakerIndex}`, {
+      await fetch(apiUrl(`/api/shows/${currentShow.id}/speakers/${speakerIndex}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ displayName }),
@@ -414,7 +440,7 @@ export default function CoHost() {
 
   const fetchShowSummary = async (showId: number) => {
     try {
-      const res = await fetch(`/api/shows/${showId}/summary`);
+      const res = await fetch(apiUrl(`/api/shows/${showId}/summary`));
       const data = await res.json();
       if (data && data.tokenCount) {
         setShowSummary({ tokenCount: data.tokenCount, segmentCount: data.segmentCount });
@@ -434,7 +460,7 @@ export default function CoHost() {
     
     setIsPreparingContext(true);
     try {
-      const res = await fetch(`/api/shows/${currentShow.id}/prepare-context`, {
+      const res = await fetch(apiUrl(`/api/shows/${currentShow.id}/prepare-context`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -472,7 +498,7 @@ export default function CoHost() {
     if (!newPromptName.trim() || !systemPrompt.trim()) return;
     
     try {
-      const res = await fetch("/api/system-prompts", {
+      const res = await fetch(apiUrl("/api/system-prompts"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newPromptName, prompt: systemPrompt }),
@@ -493,7 +519,7 @@ export default function CoHost() {
   const handleVoicePreferenceChange = async (voice: "Kore" | "Puck") => {
     setVoicePreference(voice);
     try {
-      await fetch("/api/user/voice-preference", {
+      await fetch(apiUrl("/api/user/voice-preference"), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ voicePreference: voice }),
@@ -507,7 +533,7 @@ export default function CoHost() {
     if (!newShowTitle.trim()) return;
     
     try {
-      const res = await fetch("/api/shows", {
+      const res = await fetch(apiUrl("/api/shows"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newShowTitle }),
@@ -561,7 +587,7 @@ export default function CoHost() {
     if (!editingShow || !editShowTitle.trim()) return;
     
     try {
-      const res = await fetch(`/api/shows/${editingShow.id}`, {
+      const res = await fetch(apiUrl(`/api/shows/${editingShow.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: editShowTitle }),
@@ -582,7 +608,7 @@ export default function CoHost() {
     if (!deleteShowId) return;
     
     try {
-      await fetch(`/api/shows/${deleteShowId}`, { method: "DELETE" });
+      await fetch(apiUrl(`/api/shows/${deleteShowId}`), { method: "DELETE" });
       setShows(prev => prev.filter(s => s.id !== deleteShowId));
       if (currentShow?.id === deleteShowId) {
         setCurrentShow(null);
@@ -604,7 +630,7 @@ export default function CoHost() {
     if (!editingPrompt || !editPromptName.trim() || !editPromptText.trim()) return;
     
     try {
-      const res = await fetch(`/api/system-prompts/${editingPrompt.id}`, {
+      const res = await fetch(apiUrl(`/api/system-prompts/${editingPrompt.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: editPromptName, prompt: editPromptText }),
@@ -622,7 +648,7 @@ export default function CoHost() {
     if (!deletePromptId) return;
     
     try {
-      await fetch(`/api/system-prompts/${deletePromptId}`, { method: "DELETE" });
+      await fetch(apiUrl(`/api/system-prompts/${deletePromptId}`), { method: "DELETE" });
       setSavedPrompts(prev => prev.filter(p => p.id !== deletePromptId));
       setDeletePromptId(null);
     } catch (error) {
@@ -638,7 +664,7 @@ export default function CoHost() {
   const handleAddVocab = async () => {
     if (!newVocabWord.trim()) return;
     try {
-      await fetch("/api/pronunciation-vocab", {
+      await fetch(apiUrl("/api/pronunciation-vocab"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ word: newVocabWord.trim(), language: "en" }),
@@ -652,7 +678,7 @@ export default function CoHost() {
   
   const handleDeleteVocab = async (id: number) => {
     try {
-      await fetch(`/api/pronunciation-vocab/${id}`, { method: "DELETE" });
+      await fetch(apiUrl(`/api/pronunciation-vocab/${id}`), { method: "DELETE" });
       refetchVocab();
     } catch (error) {
       console.error("Error deleting vocab:", error);
@@ -911,7 +937,7 @@ export default function CoHost() {
                 </div>
               </DialogContent>
             </Dialog>
-            
+
             <Select 
               value={language} 
               onValueChange={(val) => {
@@ -1643,23 +1669,26 @@ export default function CoHost() {
               </Button>
               
               {/* Quick Actions from database (includes defaults for new users) */}
-              {quickActions.map((action) => (
-                <Button
-                  key={action.id}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => {
-                    if (!action.prompt) return;
-                    sendText(action.prompt);
-                    setMessages(prev => [...prev, { id: Date.now(), role: "user", text: action.prompt }]);
-                  }}
-                  disabled={!isReady}
-                  data-testid={`button-quick-action-${action.id}`}
-                >
-                  {action.label}
-                </Button>
-              ))}
+              {quickActions.map((action) => {
+                const translated = getTranslatedAction(action, language);
+                return (
+                  <Button
+                    key={action.id}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      if (!translated.prompt) return;
+                      sendText(translated.prompt);
+                      setMessages(prev => [...prev, { id: Date.now(), role: "user", text: translated.prompt }]);
+                    }}
+                    disabled={!isReady}
+                    data-testid={`button-quick-action-${action.id}`}
+                  >
+                    {translated.label}
+                  </Button>
+                );
+              })}
               
               {/* Settings button to manage quick actions */}
               <Link href="/quick-actions">

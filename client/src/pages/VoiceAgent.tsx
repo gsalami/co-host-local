@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/config";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Send, Activity, Database, Sparkles, ShieldCheck, Monitor, MonitorSpeaker, Plus, ChevronDown, Radio, MessageSquare, LogOut, Edit, Trash2, Download, FileText, FileJson, Search, X } from "lucide-react";
@@ -26,6 +27,12 @@ interface SpeakerMapping {
   displayName: string;
 }
 
+interface RecentSegment {
+  id: number;
+  text: string;
+  speaker?: number | null;
+}
+
 const SPEAKER_COLORS = [
   "text-accent",
   "text-purple-400", 
@@ -49,7 +56,7 @@ export default function VoiceAgent() {
   const [transcript, setTranscript] = useState<{ id: number; text: string; speaker: number | null; isFinal: boolean }[]>([]);
   const [partialText, setPartialText] = useState("");
   const [partialSpeaker, setPartialSpeaker] = useState<number | null>(null);
-  const [recentSegments, setRecentSegments] = useState<any[]>([]);
+  const [recentSegments, setRecentSegments] = useState<RecentSegment[]>([]);
   const [selectedSource, setSelectedSource] = useState<AudioSource>("microphone");
   
   const [shows, setShows] = useState<Show[]>([]);
@@ -88,8 +95,9 @@ export default function VoiceAgent() {
     return () => clearTimeout(timer);
   }, [transcriptSearch, currentShow]);
   
-  const { isConnected, isRecording, isReady, deepgramStatus, audioSource, language, speechDuration, setLanguage, startRecording, stopRecording, onTranscript, reconnectDeepgram } = useWebSocketAudio();
+  const { isConnected, isRecording, isReady, deepgramStatus, audioSource, language, speechDuration, sttProvider, setSttProvider, setLanguage, startRecording, stopRecording, onTranscript, reconnectDeepgram } = useWebSocketAudio();
   const { user, logout } = useAuth();
+  const providerLabel = sttProvider === "elevenlabs" ? "ElevenLabs" : "Deepgram";
 
   useEffect(() => {
     fetchShows();
@@ -138,7 +146,7 @@ export default function VoiceAgent() {
 
   const fetchShows = async () => {
     try {
-      const res = await fetch("/api/shows");
+      const res = await fetch(apiUrl("/api/shows"));
       const data = await res.json();
       setShows(data);
     } catch (error) {
@@ -160,7 +168,7 @@ export default function VoiceAgent() {
     }
     const requestId = ++searchRequestIdRef.current;
     try {
-      const res = await fetch(`/api/transcripts/recent?limit=3000&showId=${showId}`);
+      const res = await fetch(apiUrl(`/api/transcripts/recent?limit=3000&showId=${showId}`));
       const data = await res.json();
       // Only update if this is still the latest request
       if (requestId === searchRequestIdRef.current) {
@@ -178,7 +186,7 @@ export default function VoiceAgent() {
     }
     const requestId = ++searchRequestIdRef.current;
     try {
-      const res = await fetch(`/api/transcripts/search?q=${encodeURIComponent(query)}&showId=${currentShow.id}`);
+      const res = await fetch(apiUrl(`/api/transcripts/search?q=${encodeURIComponent(query)}&showId=${currentShow.id}`));
       const data = await res.json();
       // Only update if this is still the latest request
       if (requestId === searchRequestIdRef.current) {
@@ -191,7 +199,7 @@ export default function VoiceAgent() {
 
   const fetchSpeakerMappings = async (showId: number) => {
     try {
-      const res = await fetch(`/api/shows/${showId}/speakers`);
+      const res = await fetch(apiUrl(`/api/shows/${showId}/speakers`));
       if (!res.ok) {
         setSpeakerMappings([]);
         return;
@@ -207,7 +215,7 @@ export default function VoiceAgent() {
   const saveSpeakerMapping = async (speakerIndex: number, displayName: string) => {
     if (!currentShow) return;
     try {
-      await fetch(`/api/shows/${currentShow.id}/speakers/${speakerIndex}`, {
+      await fetch(apiUrl(`/api/shows/${currentShow.id}/speakers/${speakerIndex}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ displayName }),
@@ -227,7 +235,7 @@ export default function VoiceAgent() {
     if (!newShowTitle.trim()) return;
     
     try {
-      const res = await fetch("/api/shows", {
+      const res = await fetch(apiUrl("/api/shows"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newShowTitle }),
@@ -252,7 +260,7 @@ export default function VoiceAgent() {
     if (!editingShow || !editShowTitle.trim()) return;
     
     try {
-      const res = await fetch(`/api/shows/${editingShow.id}`, {
+      const res = await fetch(apiUrl(`/api/shows/${editingShow.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: editShowTitle }),
@@ -273,7 +281,7 @@ export default function VoiceAgent() {
     if (!deleteShowId) return;
     
     try {
-      await fetch(`/api/shows/${deleteShowId}`, { method: "DELETE" });
+      await fetch(apiUrl(`/api/shows/${deleteShowId}`), { method: "DELETE" });
       setShows(prev => prev.filter(s => s.id !== deleteShowId));
       if (currentShow?.id === deleteShowId) {
         setCurrentShow(null);
@@ -286,7 +294,7 @@ export default function VoiceAgent() {
 
   const handleExportShow = async (showId: number, format: "json" | "md") => {
     try {
-      const res = await fetch(`/api/shows/${showId}/export?format=${format}`);
+      const res = await fetch(apiUrl(`/api/shows/${showId}/export?format=${format}`));
       const contentDisposition = res.headers.get("Content-Disposition");
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
       const filename = filenameMatch?.[1] || `show_${showId}.${format}`;
@@ -633,6 +641,23 @@ export default function VoiceAgent() {
                  ))}
                </div>
                
+               <Select
+                 value={sttProvider}
+                 onValueChange={(value) => {
+                   const provider = value === "elevenlabs" ? "elevenlabs" : "deepgram";
+                   setSttProvider(provider);
+                 }}
+                 disabled={isRecording}
+               >
+                 <SelectTrigger className="w-[140px]" data-testid="select-stt-provider">
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="deepgram" data-testid="stt-provider-deepgram">Deepgram</SelectItem>
+                   <SelectItem value="elevenlabs" data-testid="stt-provider-elevenlabs">ElevenLabs</SelectItem>
+                 </SelectContent>
+               </Select>
+
                <Select 
                  value={language} 
                  onValueChange={(val) => setLanguage(val as TranscriptLanguage)}
@@ -668,7 +693,7 @@ export default function VoiceAgent() {
                </div>
              )}
 
-             {/* Deepgram Status - visible on all devices during recording */}
+            {/* STT Status - visible on all devices during recording */}
              {isRecording && (
                <div className="flex items-center gap-3 z-10 md:hidden">
                  <span className={`flex items-center gap-1.5 text-xs ${
@@ -679,8 +704,8 @@ export default function VoiceAgent() {
                      deepgramStatus === 'connected' ? 'bg-success' : 
                      deepgramStatus === 'reconnecting' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'
                    }`} />
-                   {deepgramStatus === 'connected' ? 'Transkription aktiv' : 
-                    deepgramStatus === 'reconnecting' ? 'Verbinden...' : 'Verbindung getrennt'}
+                  {deepgramStatus === 'connected' ? `${providerLabel} aktiv` : 
+                   deepgramStatus === 'reconnecting' ? 'Verbinden...' : 'Verbindung getrennt'}
                  </span>
                  <Button
                    size="sm"
@@ -717,7 +742,7 @@ export default function VoiceAgent() {
                           deepgramStatus === 'connected' ? 'bg-success' : 
                           deepgramStatus === 'reconnecting' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'
                         }`} />
-                        {deepgramStatus === 'connected' ? 'Deepgram OK' : 
+                        {deepgramStatus === 'connected' ? `${providerLabel} OK` : 
                          deepgramStatus === 'reconnecting' ? 'Verbinden...' : 'Getrennt'}
                       </span>
                       <Button
@@ -781,27 +806,34 @@ export default function VoiceAgent() {
                )}
              </div>
              
-             <ScrollArea className="flex-1 -mx-2 px-2">
+             <ScrollArea className="flex-1 -mx-2 px-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                <div className="space-y-2">
-                 {recentSegments.map((seg: any) => {
+                 {recentSegments.map((seg) => {
                    const speakerColor = typeof seg.speaker === 'number' ? getSpeakerColor(seg.speaker) : "text-foreground/80";
                    return (
                      <div key={seg.id} className="p-3 rounded-lg bg-white/5 border border-white/5 text-xs group hover:bg-white/10 transition-colors cursor-default" data-testid={`memory-${seg.id}`}>
                        <div className="flex justify-between items-start mb-1">
-                         {typeof seg.speaker === 'number' && (
-                           <span 
-                             className={`${speakerColor} font-medium mr-2 cursor-pointer hover:underline`}
-                             onClick={() => {
-                               setEditingSpeaker({ index: seg.speaker, name: getSpeakerDisplayName(seg.speaker) });
-                               setSpeakerDialogOpen(true);
-                             }}
-                           >
-                             [{getSpeakerDisplayName(seg.speaker)}]
+                         <div className="flex items-start gap-1 flex-1 min-w-0">
+                           {typeof seg.speaker === 'number' && (
+                             <span 
+                               className={`${speakerColor} font-medium mr-1 cursor-pointer hover:underline shrink-0`}
+                               onClick={() => {
+                                 setEditingSpeaker({ index: seg.speaker, name: getSpeakerDisplayName(seg.speaker) });
+                                 setSpeakerDialogOpen(true);
+                               }}
+                             >
+                               [{getSpeakerDisplayName(seg.speaker)}]
+                             </span>
+                           )}
+                           <span className={`${speakerColor} font-medium`}>
+                             {highlightText(seg.text, transcriptSearch)}
+                           </span>
+                         </div>
+                         {seg.timestamp && (
+                           <span className="text-[10px] text-muted-foreground/40 shrink-0 ml-2 tabular-nums">
+                             {new Date(seg.timestamp).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                            </span>
                          )}
-                         <span className={`${speakerColor} font-medium w-full`}>
-                           {highlightText(seg.text, transcriptSearch)}
-                         </span>
                        </div>
                      </div>
                    );

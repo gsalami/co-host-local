@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/config";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -34,7 +35,7 @@ export default function Sources() {
 
   const createMutation = useMutation({
     mutationFn: async (data: { title: string; type: string; mimeType: string; originalFilename: string; fileData: string; textContent?: string }) => {
-      const res = await fetch("/api/sources", {
+      const res = await fetch(apiUrl("/api/sources"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -59,7 +60,7 @@ export default function Sources() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, title, textContent }: { id: number; title: string; textContent: string }) => {
-      const res = await fetch(`/api/sources/${id}`, {
+      const res = await fetch(apiUrl(`/api/sources/${id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, textContent }),
@@ -81,7 +82,7 @@ export default function Sources() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/sources/${id}`, {
+      const res = await fetch(apiUrl(`/api/sources/${id}`), {
         method: "DELETE",
         credentials: "include",
       });

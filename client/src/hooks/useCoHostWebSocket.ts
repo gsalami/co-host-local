@@ -1,3 +1,4 @@
+import { apiUrl, BASE_PATH } from "@/lib/config";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 export interface CoHostEvent {
@@ -92,7 +93,7 @@ export function useCoHostWebSocket() {
     }
     
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/cohost`);
+    const ws = new WebSocket(`${protocol}//${window.location.host}${BASE_PATH}/ws/cohost`);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -517,13 +518,13 @@ export function useCoHostWebSocket() {
     const contextPayload = contextData ? JSON.stringify(contextData) : "";
     const LARGE_CONTEXT_THRESHOLD = 50 * 1024; // 50KB
     
-    let payload: any = { type: "start", showId, systemPrompt, language: selectedLanguage, userId, voicePreference };
+    const payload: Record<string, unknown> = { type: "start", showId, systemPrompt, language: selectedLanguage, userId, voicePreference };
     
     if (contextPayload.length > LARGE_CONTEXT_THRESHOLD) {
       // Upload large context via HTTP first
       console.log(`Context too large (${contextPayload.length} bytes), uploading via HTTP...`);
       try {
-        const response = await fetch("/api/cohost/context", {
+        const response = await fetch(apiUrl("/api/cohost/context"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -581,7 +582,7 @@ export function useCoHostWebSocket() {
       const durationSeconds = Math.round(durationMs / 1000);
       if (durationSeconds > 0) {
         try {
-          await fetch("/api/usage", {
+          await fetch(apiUrl("/api/usage"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -2,8 +2,11 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import cors from "cors";
+import helmet from "helmet";
 
 const app = express();
+app.set("trust proxy", 1);
 const httpServer = createServer(app);
 
 declare module "http" {
@@ -11,6 +14,36 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+const defaultCorsOrigins = [
+  "http://localhost:5000",
+  "http://127.0.0.1:5000",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+const configuredCorsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean)
+  : [];
+const allowedOrigins = configuredCorsOrigins.length > 0 ? configuredCorsOrigins : defaultCorsOrigins;
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 app.use(
   express.json({
@@ -63,9 +96,13 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    const errorMeta = typeof err === "object" && err !== null ? (err as { status?: number; statusCode?: number }) : {};
+    const status =
+      (typeof errorMeta.status === "number" && errorMeta.status) ||
+      (typeof errorMeta.statusCode === "number" && errorMeta.statusCode) ||
+      500;
+    const message = err instanceof Error ? err.message : "Internal Server Error";
 
     res.status(status).json({ message });
     throw err;
@@ -90,7 +127,6 @@ app.use((req, res, next) => {
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/config";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/login", {
+      const response = await fetch(apiUrl("/api/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

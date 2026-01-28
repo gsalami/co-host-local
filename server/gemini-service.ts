@@ -9,7 +9,7 @@ if (!googleAiApiKey) {
 const ai = googleAiApiKey ? new GoogleGenAI({ apiKey: googleAiApiKey }) : null;
 
 const SUMMARY_MODEL = "gemini-1.5-flash";
-const EMBEDDING_MODEL = "text-embedding-004";
+const EMBEDDING_MODEL = "gemini-embedding-001";
 
 export interface SummaryResult {
   summary: string;

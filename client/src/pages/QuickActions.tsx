@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/config";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, GripVertical, Check, X, Lock, RotateCcw } from "lucide-react";
@@ -34,7 +35,7 @@ export default function QuickActions() {
   const { data: allActions } = useQuery<{ system: QuickAction[]; user: QuickAction[] }>({
     queryKey: ["/api/quick-actions/all"],
     queryFn: async () => {
-      const res = await fetch("/api/quick-actions/all");
+      const res = await fetch(apiUrl("/api/quick-actions/all"));
       if (!res.ok) throw new Error("Failed to fetch actions");
       return res.json();
     }
@@ -43,7 +44,7 @@ export default function QuickActions() {
   const { data: selections = [] } = useQuery<ActionSelection[]>({
     queryKey: ["/api/quick-actions/selections"],
     queryFn: async () => {
-      const res = await fetch("/api/quick-actions/selections");
+      const res = await fetch(apiUrl("/api/quick-actions/selections"));
       if (!res.ok) throw new Error("Failed to fetch selections");
       return res.json();
     }
@@ -51,7 +52,7 @@ export default function QuickActions() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ actionId, isEnabled }: { actionId: number; isEnabled: boolean }) => {
-      const res = await fetch(`/api/quick-actions/selections/${actionId}`, {
+      const res = await fetch(apiUrl(`/api/quick-actions/selections/${actionId}`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isEnabled })
@@ -66,7 +67,7 @@ export default function QuickActions() {
 
   const createMutation = useMutation({
     mutationFn: async ({ label, prompt }: { label: string; prompt: string }) => {
-      const res = await fetch("/api/quick-actions", {
+      const res = await fetch(apiUrl("/api/quick-actions"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label, prompt })
@@ -86,7 +87,7 @@ export default function QuickActions() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, label, prompt }: { id: number; label: string; prompt: string }) => {
-      const res = await fetch(`/api/quick-actions/${id}`, {
+      const res = await fetch(apiUrl(`/api/quick-actions/${id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label, prompt })
@@ -106,7 +107,7 @@ export default function QuickActions() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/quick-actions/${id}`, { method: "DELETE" });
+      const res = await fetch(apiUrl(`/api/quick-actions/${id}`), { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete action");
     },
     onSuccess: () => {
@@ -118,7 +119,7 @@ export default function QuickActions() {
 
   const loadDefaultsMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/quick-actions/load-defaults", { method: "POST" });
+      const res = await fetch(apiUrl("/api/quick-actions/load-defaults"), { method: "POST" });
       if (!res.ok) throw new Error("Failed to load defaults");
       return res.json();
     },

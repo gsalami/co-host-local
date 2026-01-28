@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/config";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, Mic, Clock, Shield, ShieldCheck, RefreshCw, CreditCard, Plus, ShoppingCart } from "lucide-react";
@@ -81,9 +82,9 @@ export default function AdminDashboard() {
   const refreshData = async () => {
     try {
       const [usageRes, creditsRes, purchasesRes] = await Promise.all([
-        fetch("/api/admin/usage/by-user"),
-        fetch("/api/admin/credits/by-user"),
-        fetch("/api/admin/purchases")
+        fetch(apiUrl("/api/admin/usage/by-user")),
+        fetch(apiUrl("/api/admin/credits/by-user")),
+        fetch(apiUrl("/api/admin/purchases"))
       ]);
       if (usageRes.ok) {
         setUserUsage(await usageRes.json());
@@ -105,7 +106,7 @@ export default function AdminDashboard() {
   const handlePurchaseStatusChange = async (purchaseId: number, newStatus: string) => {
     setUpdatingPurchaseId(purchaseId);
     try {
-      const res = await fetch(`/api/admin/purchases/${purchaseId}/status`, {
+      const res = await fetch(apiUrl(`/api/admin/purchases/${purchaseId}/status`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus })
@@ -160,7 +161,7 @@ export default function AdminDashboard() {
     }
     setAddingCredits(true);
     try {
-      const res = await fetch("/api/admin/add-credits", {
+      const res = await fetch(apiUrl("/api/admin/add-credits"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -199,7 +200,7 @@ export default function AdminDashboard() {
     }
     setProcessingPurchase(true);
     try {
-      const res = await fetch("/api/admin/process-purchase", {
+      const res = await fetch(apiUrl("/api/admin/process-purchase"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: sessionIdInput.trim() })
@@ -219,7 +220,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetch("/api/admin/check")
+    fetch(apiUrl("/api/admin/check"))
       .then(res => res.json())
       .then(data => {
         setIsAdmin(data.isAdmin);
@@ -234,10 +235,10 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       try {
         const [usersRes, usageRes, creditsRes, purchasesRes] = await Promise.all([
-          fetch("/api/admin/users"),
-          fetch("/api/admin/usage/by-user"),
-          fetch("/api/admin/credits/by-user"),
-          fetch("/api/admin/purchases")
+          fetch(apiUrl("/api/admin/users")),
+          fetch(apiUrl("/api/admin/usage/by-user")),
+          fetch(apiUrl("/api/admin/credits/by-user")),
+          fetch(apiUrl("/api/admin/purchases"))
         ]);
         
         if (usersRes.ok) {
@@ -267,7 +268,7 @@ export default function AdminDashboard() {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      const res = await fetch(`/api/admin/users/${userId}/role`, {
+      const res = await fetch(apiUrl(`/api/admin/users/${userId}/role`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: newRole })
@@ -300,7 +301,7 @@ export default function AdminDashboard() {
   const handleStripeSync = async () => {
     setSyncingStripe(true);
     try {
-      const res = await fetch("/api/admin/stripe/sync", {
+      const res = await fetch(apiUrl("/api/admin/stripe/sync"), {
         method: "POST",
         headers: { "Content-Type": "application/json" }
       });

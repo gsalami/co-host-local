@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/config";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
@@ -66,7 +67,7 @@ export default function UsageDashboard() {
   const [showUsage, setShowUsage] = useState<ShowUsage[]>([]);
 
   useEffect(() => {
-    fetch("/api/shows")
+    fetch(apiUrl("/api/shows"))
       .then(res => res.json())
       .then(setShows)
       .catch(console.error);
@@ -76,9 +77,9 @@ export default function UsageDashboard() {
     try {
       const showParam = selectedShowId !== "all" ? `&showId=${selectedShowId}` : "";
       const [statsRes, dailyRes, showUsageRes] = await Promise.all([
-        fetch(`/api/usage/stats?${showParam.replace("&", "")}`),
-        fetch(`/api/usage/daily?days=${days}${showParam}`),
-        fetch(`/api/usage/by-show?days=${days}`)
+        fetch(apiUrl(`/api/usage/stats?${showParam.replace("&", "")}`)),
+        fetch(apiUrl(`/api/usage/daily?days=${days}${showParam}`)),
+        fetch(apiUrl(`/api/usage/by-show?days=${days}`))
       ]);
       
       if (statsRes.ok) {

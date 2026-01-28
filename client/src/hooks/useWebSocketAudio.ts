@@ -1,3 +1,4 @@
+import { apiUrl, BASE_PATH } from "@/lib/config";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 export interface TranscriptEvent {
@@ -10,12 +11,21 @@ export interface TranscriptEvent {
 
 export type AudioSource = "microphone" | "tab" | "both";
 export type TranscriptLanguage = "de-CH" | "en";
+export type SttProvider = "deepgram" | "elevenlabs";
 
 const INITIAL_RECONNECT_DELAY = 1000;
 const MAX_RECONNECT_DELAY = 30000;
 const RECONNECT_MULTIPLIER = 2;
 
 export type DeepgramStatus = "connected" | "disconnected" | "reconnecting";
+
+const STT_PROVIDER_STORAGE_KEY = "stt-provider";
+
+const getStoredSttProvider = (): SttProvider => {
+  if (typeof window === "undefined") return "deepgram";
+  const stored = window.localStorage.getItem(STT_PROVIDER_STORAGE_KEY);
+  return stored === "elevenlabs" ? "elevenlabs" : "deepgram";
+};
 
 export function useWebSocketAudio() {
   const [isConnected, setIsConnected] = useState(false);
@@ -24,6 +34,7 @@ export function useWebSocketAudio() {
   const [deepgramStatus, setDeepgramStatus] = useState<DeepgramStatus>("disconnected");
   const [audioSource, setAudioSource] = useState<AudioSource>("microphone");
   const [language, setLanguage] = useState<TranscriptLanguage>("de-CH");
+  const [sttProvider, setSttProvider] = useState<SttProvider>(() => getStoredSttProvider());
   const [speechDuration, setSpeechDuration] = useState(0); // Accumulated actual speech time in seconds
   const wsRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -31,6 +42,12 @@ export function useWebSocketAudio() {
   const tabStreamRef = useRef<MediaStream | null>(null);
   const displayStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const workletSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const workletGainRef = useRef<GainNode | null>(null);
+  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const pcmSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const pcmGainRef = useRef<GainNode | null>(null);
   const onTranscriptRef = useRef<((event: TranscriptEvent) => void) | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const shouldReconnectRef = useRef(true);
@@ -38,7 +55,15 @@ export function useWebSocketAudio() {
   const speechDurationRef = useRef(0); // Track accumulated speech for usage tracking
   const currentShowIdRef = useRef<number | null>(null);
   const currentLanguageRef = useRef<TranscriptLanguage>("de-CH");
+  const currentProviderRef = useRef<SttProvider>(sttProvider);
   const isRecordingRef = useRef(false); // Track recording state for reconnection handling
+
+  useEffect(() => {
+    currentProviderRef.current = sttProvider;
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STT_PROVIDER_STORAGE_KEY, sttProvider);
+    }
+  }, [sttProvider]);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -46,7 +71,7 @@ export function useWebSocketAudio() {
     }
     
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/audio`);
+    const ws = new WebSocket(`${protocol}//${window.location.host}${BASE_PATH}/ws/audio`);
 
     ws.onopen = () => {
       console.log("WebSocket connected");
@@ -57,12 +82,14 @@ export function useWebSocketAudio() {
       if (isRecordingRef.current) {
         console.log("Reconnected while recording - resending start command", {
           showId: currentShowIdRef.current,
-          language: currentLanguageRef.current
+          language: currentLanguageRef.current,
+          provider: currentProviderRef.current
         });
         ws.send(JSON.stringify({ 
           type: "start", 
           showId: currentShowIdRef.current, 
-          language: currentLanguageRef.current 
+          language: currentLanguageRef.current,
+          provider: currentProviderRef.current
         }));
       }
     };
@@ -77,6 +104,28 @@ export function useWebSocketAudio() {
           return;
         }
         
+        // Handle STT connection status messages
+        if (data.type === "stt.connected") {
+          console.log("STT connected", data.provider ? `(${data.provider})` : "");
+          setDeepgramStatus("connected");
+          return;
+        }
+        if (data.type === "stt.disconnected") {
+          console.log("STT disconnected", data.message ? `- ${data.message}` : "");
+          setDeepgramStatus("disconnected");
+          return;
+        }
+        if (data.type === "stt.reconnecting") {
+          console.log("STT reconnecting...");
+          setDeepgramStatus("reconnecting");
+          return;
+        }
+        if (data.type === "stt.health_timeout") {
+          console.warn("STT health timeout - no response for", data.lastResponseSeconds, "seconds");
+          setDeepgramStatus("disconnected");
+          return;
+        }
+
         // Handle Deepgram connection status messages
         if (data.type === "deepgram.connected") {
           console.log("Deepgram connected");
@@ -192,16 +241,85 @@ export function useWebSocketAudio() {
     return destination.stream;
   };
 
-  const startRecording = useCallback(async (source: AudioSource = audioSource, showId?: number | null, lang: TranscriptLanguage = language) => {
+  const combineAudioStreamsWithContext = (streams: MediaStream[], audioContext: AudioContext): MediaStream => {
+    const destination = audioContext.createMediaStreamDestination();
+
+    streams.forEach((stream) => {
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(destination);
+    });
+
+    return destination.stream;
+  };
+
+  const startPcmStreaming = async (stream: MediaStream): Promise<void> => {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const audioContext = audioContextRef.current ?? new AudioContextClass({ sampleRate: 16000 });
+    audioContextRef.current = audioContext;
+
+    try {
+      await audioContext.audioWorklet.addModule(`${BASE_PATH}/audio-processor.js`);
+      const source = audioContext.createMediaStreamSource(stream);
+      const worklet = new AudioWorkletNode(audioContext, "audio-processor");
+      workletNodeRef.current = worklet;
+      workletSourceRef.current = source;
+      worklet.port.onmessage = (event) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(event.data);
+        }
+      };
+
+      const gain = audioContext.createGain();
+      gain.gain.value = 0;
+      workletGainRef.current = gain;
+
+      source.connect(worklet);
+      worklet.connect(gain);
+      gain.connect(audioContext.destination);
+    } catch (error) {
+      console.warn("AudioWorklet not available, falling back to ScriptProcessor", error);
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      scriptProcessorRef.current = processor;
+      pcmSourceRef.current = source;
+
+      processor.onaudioprocess = (event) => {
+        if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+        const inputData = event.inputBuffer.getChannelData(0);
+        const int16Array = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const s = Math.max(-1, Math.min(1, inputData[i]));
+          int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        wsRef.current.send(int16Array.buffer);
+      };
+
+      const gain = audioContext.createGain();
+      gain.gain.value = 0;
+      pcmGainRef.current = gain;
+
+      source.connect(processor);
+      processor.connect(gain);
+      gain.connect(audioContext.destination);
+    }
+  };
+
+  const startRecording = useCallback(async (
+    source: AudioSource = audioSource,
+    showId?: number | null,
+    lang: TranscriptLanguage = language,
+    provider: SttProvider = sttProvider
+  ) => {
     if (!isConnected) {
       console.log("WebSocket not connected");
       return;
     }
     
     try {
-      wsRef.current?.send(JSON.stringify({ type: "start", showId, language: lang }));
+      wsRef.current?.send(JSON.stringify({ type: "start", showId, language: lang, provider }));
       currentShowIdRef.current = showId ?? null;
       currentLanguageRef.current = lang;
+      currentProviderRef.current = provider;
       isRecordingRef.current = true; // Track for reconnection handling
       // Reset speech duration for new recording session
       speechDurationRef.current = 0;
@@ -227,29 +345,43 @@ export function useWebSocketAudio() {
         
         const tabStream = await getTabAudioStream();
         tabStreamRef.current = tabStream;
-        
-        const combined = combineAudioStreams([micStream, tabStream]);
-        streamToRecord = combined;
+
+        if (provider === "elevenlabs") {
+          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          const audioContext = new AudioContextClass({ sampleRate: 16000 });
+          audioContextRef.current = audioContext;
+          streamToRecord = combineAudioStreamsWithContext([micStream, tabStream], audioContext);
+        } else {
+          const combined = combineAudioStreams([micStream, tabStream]);
+          streamToRecord = combined;
+        }
         console.log("Recording from both microphone and tab audio");
       }
 
-      const mediaRecorder = new MediaRecorder(streamToRecord, {
-        mimeType: "audio/webm;codecs=opus",
-      });
+      if (provider === "elevenlabs") {
+        await startPcmStreaming(streamToRecord);
+        mediaRecorderRef.current = null;
+      } else {
+        const mediaRecorder = new MediaRecorder(streamToRecord, {
+          mimeType: "audio/webm;codecs=opus",
+        });
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(event.data);
-        }
-      };
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0 && wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(event.data);
+          }
+        };
 
-      mediaRecorder.start(100);
-      mediaRecorderRef.current = mediaRecorder;
+        mediaRecorder.start(100);
+        mediaRecorderRef.current = mediaRecorder;
+      }
       setAudioSource(source);
       setIsRecording(true);
       console.log("Recording started");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error starting recording:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorName = error instanceof Error ? error.name : "";
       
       if (micStreamRef.current) {
         micStreamRef.current.getTracks().forEach(t => t.stop());
@@ -259,16 +391,20 @@ export function useWebSocketAudio() {
         displayStreamRef.current.getTracks().forEach(t => t.stop());
         displayStreamRef.current = null;
       }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
       
-      if (error.name === "NotAllowedError") {
+      if (errorName === "NotAllowedError") {
         alert("Zugriff verweigert. Bitte erlauben Sie den Zugriff auf Mikrofon/Bildschirm.");
-      } else if (error.message?.includes("No audio track")) {
+      } else if (errorMessage.includes("No audio track")) {
         alert("Kein Audio ausgewählt. Bitte 'Audio teilen' ankreuzen beim Tab-Teilen.");
       } else {
-        alert(`Fehler: ${error.message}`);
+        alert(`Fehler: ${errorMessage}`);
       }
     }
-  }, [isConnected, audioSource, language]);
+  }, [isConnected, audioSource, language, sttProvider]);
 
   const stopRecording = useCallback(async () => {
     isRecordingRef.current = false; // Clear recording state for reconnection handling
@@ -280,6 +416,31 @@ export function useWebSocketAudio() {
     
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
+    }
+
+    if (workletNodeRef.current) {
+      workletNodeRef.current.disconnect();
+      workletNodeRef.current = null;
+    }
+    if (workletSourceRef.current) {
+      workletSourceRef.current.disconnect();
+      workletSourceRef.current = null;
+    }
+    if (workletGainRef.current) {
+      workletGainRef.current.disconnect();
+      workletGainRef.current = null;
+    }
+    if (scriptProcessorRef.current) {
+      scriptProcessorRef.current.disconnect();
+      scriptProcessorRef.current = null;
+    }
+    if (pcmSourceRef.current) {
+      pcmSourceRef.current.disconnect();
+      pcmSourceRef.current = null;
+    }
+    if (pcmGainRef.current) {
+      pcmGainRef.current.disconnect();
+      pcmGainRef.current = null;
     }
     
     if (micStreamRef.current) {
@@ -303,7 +464,7 @@ export function useWebSocketAudio() {
     const durationSeconds = Math.round(speechDurationRef.current);
     if (durationSeconds > 0) {
       try {
-        await fetch("/api/usage", {
+        await fetch(apiUrl("/api/usage"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -354,6 +515,8 @@ export function useWebSocketAudio() {
     deepgramStatus,
     audioSource,
     language,
+    sttProvider,
+    setSttProvider,
     speechDuration, // Actual speaking time in seconds
     setLanguage,
     startRecording,

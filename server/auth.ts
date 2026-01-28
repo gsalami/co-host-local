@@ -7,21 +7,56 @@ import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
+type RateLimitOptions = {
+  windowMs: number;
+  max: number;
+  keyPrefix: string;
+};
+
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+function createRateLimiter({ windowMs, max, keyPrefix }: RateLimitOptions): RequestHandler {
+  return (req, res, next) => {
+    const key = `${keyPrefix}:${req.ip ?? "unknown"}`;
+    const now = Date.now();
+    const entry = rateLimitStore.get(key);
+
+    if (!entry || entry.resetAt <= now) {
+      rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+
+    if (entry.count >= max) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+      res.setHeader("Retry-After", retryAfterSeconds.toString());
+      return res.status(429).json({ message: "Too many requests. Please try again later." });
+    }
+
+    entry.count += 1;
+    rateLimitStore.set(key, entry);
+    return next();
+  };
+}
+
 // Simple session configuration using memory store
+const MemoryStoreClass = createMemoryStore(session);
+export const sessionStore = new MemoryStoreClass({
+  checkPeriod: 86400000, // prune expired entries every 24h
+});
+
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const MemoryStore = createMemoryStore(session);
 
   return session({
     secret: process.env.SESSION_SECRET!,
-    store: new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-    }),
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
+      sameSite: "lax" as const,
       maxAge: sessionTtl,
     },
   });
@@ -33,6 +68,17 @@ export function setupAuth(app: Express) {
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
+
+  const loginLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    keyPrefix: "login",
+  });
+  const authLimiter = createRateLimiter({
+    windowMs: 60 * 1000,
+    max: 30,
+    keyPrefix: "auth",
+  });
 
   // Configure passport local strategy
   passport.use(
@@ -75,8 +121,9 @@ export function setupAuth(app: Express) {
     })
   );
 
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
+  passport.serializeUser((user: unknown, done) => {
+    const userId = typeof (user as { id?: string }).id === "string" ? (user as { id: string }).id : null;
+    done(null, userId);
   });
 
   passport.deserializeUser(async (id: string, done) => {
@@ -91,19 +138,19 @@ export function setupAuth(app: Express) {
   });
 
   // Login route
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+  app.post("/api/login", loginLimiter, passport.authenticate("local"), (req, res) => {
     res.json({ success: true, user: req.user });
   });
 
   // Logout route
-  app.post("/api/logout", (req, res) => {
+  app.post("/api/logout", authLimiter, (req, res) => {
     req.logout(() => {
       res.json({ success: true });
     });
   });
 
   // Get current user
-  app.get("/api/auth/user", (req, res) => {
+  app.get("/api/auth/user", authLimiter, (req, res) => {
     if (req.isAuthenticated()) {
       res.json(req.user);
     } else {

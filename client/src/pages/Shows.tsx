@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/config";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,7 +42,7 @@ export default function Shows() {
   const [deleteShowTitle, setDeleteShowTitle] = useState("");
 
   const fetchShows = () => {
-    fetch("/api/shows")
+    fetch(apiUrl("/api/shows"))
       .then(res => res.json())
       .then(data => {
         setShows(data);
@@ -69,7 +70,7 @@ export default function Shows() {
     if (!editingShow || !editTitle.trim()) return;
     
     try {
-      const res = await fetch(`/api/shows/${editingShow.id}`, {
+      const res = await fetch(apiUrl(`/api/shows/${editingShow.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: editTitle.trim() })
@@ -99,7 +100,7 @@ export default function Shows() {
     if (!deleteShowId) return;
     
     try {
-      const res = await fetch(`/api/shows/${deleteShowId}`, { method: "DELETE" });
+      const res = await fetch(apiUrl(`/api/shows/${deleteShowId}`), { method: "DELETE" });
       
       if (res.ok) {
         setShows(shows.filter(s => s.id !== deleteShowId));
@@ -118,7 +119,7 @@ export default function Shows() {
     e.stopPropagation();
     
     try {
-      const res = await fetch(`/api/shows/${show.id}/segments`);
+      const res = await fetch(apiUrl(`/api/shows/${show.id}/segments`));
       if (!res.ok) throw new Error("Failed to fetch segments");
       
       const segments: TranscriptSegment[] = await res.json();

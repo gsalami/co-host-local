@@ -12,6 +12,6 @@ export function redirectToLogin(toast?: (options: { title: string; description: 
     });
   }
   setTimeout(() => {
-    window.location.href = "/login";
+    window.location.href = "/co-host/login";
   }, 500);
 }

@@ -96,6 +96,8 @@ export default function CombinedMode() {
   const [partialUserText, setPartialUserText] = useState("");
   const [isStarting, setIsStarting] = useState(false);
   const [sessionActive, setSessionActive] = useState(false);
+  const [partialTranscript, setPartialTranscript] = useState("");
+  const [partialSpeaker, setPartialSpeaker] = useState<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
@@ -173,9 +175,6 @@ export default function CombinedMode() {
   };
 
   // STT transcript handler
-  const [partialTranscript, setPartialTranscript] = useState("");
-  const [partialSpeaker, setPartialSpeaker] = useState<number | null>(null);
-  
   useEffect(() => {
     stt.onTranscript((event: TranscriptEvent) => {
       if (event.type === "transcript.final") {

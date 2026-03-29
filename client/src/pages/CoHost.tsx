@@ -2,7 +2,7 @@ import { apiUrl } from "@/lib/config";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { Mic, MicOff, Send, Brain, Activity, Radio, ChevronDown, Plus, ArrowLeft, Volume2, VolumeX, Save, Trash2, FileText, ChevronRight, LogOut, Edit, RefreshCw, Search, X, Loader2, FileCode, ExternalLink, Settings } from "lucide-react";
+import { Mic, MicOff, Send, Brain, Activity, Radio, ChevronDown, Plus, ArrowLeft, Volume2, VolumeX, Save, Trash2, FileText, ChevronRight, LogOut, Edit, RefreshCw, Search, X, Loader2, FileCode, ExternalLink, Settings, Star } from "lucide-react";
 import type { Source, PronunciationVocab } from "@shared/schema";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -172,8 +172,20 @@ export default function CoHost() {
   const [contextMode, setContextMode] = useState<"none" | "optimized" | "full">("none");
   const [showSummary, setShowSummary] = useState<{ tokenCount: number; segmentCount: number } | null>(null);
   
-  // Voice preference state
-  const [voicePreference, setVoicePreference] = useState<"Kore" | "Puck">("Kore");
+  // Voice preference state (localStorage for reliable persistence)
+  const [voicePreference, setVoicePreference] = useState<string>(() => {
+    if (typeof window === "undefined") return "Zephyr";
+    return window.localStorage.getItem("cohost-voice") || "Zephyr";
+  });
+  const [favoriteVoice, setFavoriteVoice] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem("cohost-favorite-voice");
+  });
+  // Model preference state
+  const [modelPreference, setModelPreference] = useState<string>(() => {
+    if (typeof window === "undefined") return "gemini-3.1-flash-live-preview";
+    return window.localStorage.getItem("cohost-model") || "gemini-3.1-flash-live-preview";
+  });
   const [sttProvider, setSttProvider] = useState<"deepgram" | "elevenlabs">(() => {
     if (typeof window === "undefined") return "deepgram";
     const stored = window.localStorage.getItem("stt-provider");
@@ -244,15 +256,6 @@ export default function CoHost() {
   useEffect(() => {
     fetchShows();
     fetchSystemPrompts();
-    // Fetch voice preference
-    fetch(apiUrl("/api/user/voice-preference"))
-      .then(res => res.json())
-      .then(data => {
-        if (data.voicePreference) {
-          setVoicePreference(data.voicePreference);
-        }
-      })
-      .catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -319,7 +322,7 @@ export default function CoHost() {
             restartTimerRef.current = null;
           }
           console.log("Starting new session for show:", showId);
-          startSession(showId, prompt, savedLanguage, savedContextData, user?.id, voicePreference);
+          startSession(showId, prompt, savedLanguage, savedContextData, user?.id, voicePreference, modelPreference);
         }
       }
       
@@ -516,17 +519,27 @@ export default function CoHost() {
     setSystemPrompt(prompt.prompt);
   };
 
-  const handleVoicePreferenceChange = async (voice: "Kore" | "Puck") => {
+  const handleVoicePreferenceChange = (voice: string) => {
     setVoicePreference(voice);
-    try {
-      await fetch(apiUrl("/api/user/voice-preference"), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voicePreference: voice }),
-      });
-    } catch (error) {
-      console.error("Error saving voice preference:", error);
+    localStorage.setItem("cohost-voice", voice);
+  };
+
+  const handleFavoriteVoice = (voice: string) => {
+    if (favoriteVoice === voice) {
+      // Unfavorite
+      setFavoriteVoice(null);
+      localStorage.removeItem("cohost-favorite-voice");
+    } else {
+      // Set as favorite and also select it
+      setFavoriteVoice(voice);
+      localStorage.setItem("cohost-favorite-voice", voice);
+      handleVoicePreferenceChange(voice);
     }
+  };
+
+  const handleModelPreferenceChange = (model: string) => {
+    setModelPreference(model);
+    localStorage.setItem("cohost-model", model);
   };
 
   const handleCreateShow = async () => {
@@ -712,7 +725,7 @@ export default function CoHost() {
 
   const handleStartSession = () => {
     setIsStarting(true);
-    startSession(currentShow?.id, systemPrompt || undefined, language, getContextData(), user?.id, voicePreference);
+    startSession(currentShow?.id, systemPrompt || undefined, language, getContextData(), user?.id, voicePreference, modelPreference);
   };
 
   const handleRefreshSession = () => {
@@ -753,7 +766,7 @@ export default function CoHost() {
           pendingRestartRef.current = null;
           shouldAutoRestartRef.current = false;
           console.log("Fallback restart for refresh:", showId);
-          startSession(showId, prompt, savedLanguage, savedContextData, user?.id, voicePreference);
+          startSession(showId, prompt, savedLanguage, savedContextData, user?.id, voicePreference, modelPreference);
         }
       }, 1000);
     }
@@ -965,7 +978,7 @@ export default function CoHost() {
                       const { showId, systemPrompt: prompt, language: savedLang } = pendingRestartRef.current;
                       pendingRestartRef.current = null;
                       shouldAutoRestartRef.current = false;
-                      startSession(showId || undefined, prompt, savedLang, undefined, user?.id, voicePreference);
+                      startSession(showId || undefined, prompt, savedLang, undefined, user?.id, voicePreference, modelPreference);
                     }
                   }, 1000);
                 }
@@ -1135,6 +1148,25 @@ export default function CoHost() {
               />
             </div>
             
+            {/* Model Selection */}
+            <div className="w-full max-w-md">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Brain className="size-4" />
+                  Gemini Modell
+                </label>
+              </div>
+              <Select value={modelPreference} onValueChange={handleModelPreferenceChange}>
+                <SelectTrigger className="w-full bg-secondary/50 border-white/10" data-testid="select-model">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gemini-3.1-flash-live-preview">⚡ 3.1 Flash Live (Neu)</SelectItem>
+                  <SelectItem value="gemini-2.5-flash-native-audio-preview-12-2025">🎙️ 2.5 Flash Audio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Voice Selection */}
             <div className="w-full max-w-md">
               <div className="flex items-center justify-between mb-2">
@@ -1142,27 +1174,42 @@ export default function CoHost() {
                   <Volume2 className="size-4" />
                   Stimme des Co-Hosts
                 </label>
+                {favoriteVoice && favoriteVoice !== voicePreference && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs gap-1 text-yellow-500"
+                    onClick={() => handleVoicePreferenceChange(favoriteVoice)}
+                  >
+                    <Star className="size-3 fill-yellow-500" />
+                    {favoriteVoice}
+                  </Button>
+                )}
               </div>
               <div className="flex gap-2">
+                <Select value={voicePreference} onValueChange={handleVoicePreferenceChange}>
+                  <SelectTrigger className="flex-1 bg-secondary/50 border-white/10" data-testid="select-voice">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Kore">👩 Kore — Klar, neutral</SelectItem>
+                    <SelectItem value="Aoede">👩 Aoede — Warm, melodisch</SelectItem>
+                    <SelectItem value="Leda">👩 Leda — Ruhig, britisch</SelectItem>
+                    <SelectItem value="Zephyr">👩 Zephyr — Leicht, luftig</SelectItem>
+                    <SelectItem value="Puck">👨 Puck — Energisch</SelectItem>
+                    <SelectItem value="Charon">👨 Charon — Tief, ruhig</SelectItem>
+                    <SelectItem value="Fenrir">👨 Fenrir — Kräftig</SelectItem>
+                    <SelectItem value="Orus">👨 Orus — Warm, freundlich</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button
-                  variant={voicePreference === "Kore" ? "default" : "outline"}
-                  size="sm"
-                  className="flex-1 gap-2"
-                  onClick={() => handleVoicePreferenceChange("Kore")}
-                  data-testid="button-voice-female"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => handleFavoriteVoice(voicePreference)}
+                  title={favoriteVoice === voicePreference ? "Favorit entfernen" : "Als Favorit setzen"}
                 >
-                  <span>👩</span>
-                  Weiblich
-                </Button>
-                <Button
-                  variant={voicePreference === "Puck" ? "default" : "outline"}
-                  size="sm"
-                  className="flex-1 gap-2"
-                  onClick={() => handleVoicePreferenceChange("Puck")}
-                  data-testid="button-voice-male"
-                >
-                  <span>👨</span>
-                  Männlich
+                  <Star className={`size-4 ${favoriteVoice === voicePreference ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"}`} />
                 </Button>
               </div>
             </div>

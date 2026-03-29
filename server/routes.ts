@@ -547,6 +547,21 @@ export async function registerRoutes(
         res.setHeader("Content-Type", "text/markdown; charset=utf-8");
         res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
         res.send(markdown);
+      } else if (format === "txt") {
+        let text = `${show.title}\n`;
+        text += `Erstellt: ${formatDate(show.createdAt)}\n`;
+        text += `${"=".repeat(60)}\n\n`;
+        
+        for (const segment of segments) {
+          const speaker = getSpeakerName(segment.speaker);
+          const ts = segment.timestamp ? new Date(segment.timestamp).toLocaleTimeString("de-CH") : "";
+          text += `[${ts}] ${speaker}: ${segment.text}\n`;
+        }
+        
+        const filename = `${show.title.replace(/[^a-zA-Z0-9äöüÄÖÜß ]/g, "_")}_${show.id}.txt`;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        res.send(text);
       } else {
         const exportData = {
           show: {
@@ -1473,8 +1488,9 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Not authenticated" });
       }
       const { voicePreference } = req.body;
-      if (!voicePreference || (voicePreference !== 'Kore' && voicePreference !== 'Puck')) {
-        return res.status(400).json({ error: "Invalid voice preference. Must be 'Kore' (female) or 'Puck' (male)" });
+      const VALID_VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"];
+      if (!voicePreference || !VALID_VOICES.includes(voicePreference)) {
+        return res.status(400).json({ error: `Invalid voice preference. Must be one of: ${VALID_VOICES.join(", ")}` });
       }
       const updatedUser = await storage.updateVoicePreference(userId, voicePreference);
       if (!updatedUser) {

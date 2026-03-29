@@ -114,35 +114,24 @@ export default function Shows() {
     }
   };
 
-  const handleExport = async (show: Show, format: "txt" | "json", e: React.MouseEvent) => {
+  const handleExport = async (show: Show, format: "txt" | "json" | "md", e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     try {
-      const res = await fetch(apiUrl(`/api/shows/${show.id}/segments`));
-      if (!res.ok) throw new Error("Failed to fetch segments");
+      const res = await fetch(apiUrl(`/api/shows/${show.id}/export?format=${format}`), {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to export");
       
-      const segments: TranscriptSegment[] = await res.json();
-      
-      let content: string;
-      let filename: string;
-      let mimeType: string;
-      
-      if (format === "json") {
-        content = JSON.stringify({ show: { id: show.id, title: show.title, createdAt: show.createdAt }, segments }, null, 2);
-        filename = `${show.title.replace(/[^a-z0-9äöüß]/gi, "_")}_${show.id}.json`;
-        mimeType = "application/json";
-      } else {
-        const lines = segments.map(seg => {
-          const speaker = seg.speaker !== null ? `[Sprecher ${seg.speaker + 1}] ` : "";
-          return `${speaker}${seg.text}`;
-        });
-        content = `# ${show.title}\n\nExportiert am: ${new Date().toLocaleString("de-CH")}\n\n---\n\n${lines.join("\n\n")}`;
-        filename = `${show.title.replace(/[^a-z0-9äöüß]/gi, "_")}_${show.id}.txt`;
-        mimeType = "text/plain";
+      const contentDisposition = res.headers.get("Content-Disposition");
+      let filename = `${show.title.replace(/[^a-z0-9äöüß]/gi, "_")}_${show.id}.${format}`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = match[1];
       }
       
-      const blob = new Blob([content], { type: mimeType });
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -263,6 +252,14 @@ export default function Shows() {
                           >
                             <Edit className="h-4 w-4 mr-2" />
                             Bearbeiten
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => handleExport(show, "md", e as unknown as React.MouseEvent)}
+                            className="text-slate-200 focus:bg-muted focus:text-white cursor-pointer"
+                            data-testid={`button-export-md-${show.id}`}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Export als Markdown
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={(e) => handleExport(show, "txt", e as unknown as React.MouseEvent)}

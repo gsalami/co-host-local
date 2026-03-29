@@ -54,7 +54,7 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
     let lastAudioReceiveTime: number | null = null; // Track when last audio chunk was received
     const AUDIO_CHUNK_TIMEOUT_MS = 500; // If no audio for 500ms, user stopped speaking
     let keepAliveInterval: NodeJS.Timeout | null = null; // Keep-alive ping to prevent Gemini timeout
-    let lastStartConfig: { showId: number | null; systemPrompt?: string; language: string; contextData?: any; voicePreference: string } | null = null; // Store config for auto-reconnect
+    let lastStartConfig: { showId: number | null; systemPrompt?: string; language: string; contextData?: any; voicePreference: string; modelPreference: string } | null = null; // Store config for auto-reconnect
     
     // Gemini outputs audio at 24kHz, 16-bit PCM, mono = 48000 bytes/second
     const GEMINI_SAMPLE_RATE = 24000;
@@ -79,7 +79,7 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
       sessionStartTime = null;
     };
   
-    const initGeminiLive = async (showId: number | null, customSystemPrompt?: string, language: string = "de-CH", contextData?: { text?: string; files?: Array<{ name: string; type: string; data: string }>; sourceIds?: number[] }, voicePreference: string = "Kore") => {
+    const initGeminiLive = async (showId: number | null, customSystemPrompt?: string, language: string = "de-CH", contextData?: { text?: string; files?: Array<{ name: string; type: string; data: string }>; sourceIds?: number[] }, voicePreference: string = "Kore", modelPreference: string = "gemini-3.1-flash-live-preview") => {
       // Guard against duplicate sessions
       if (sessionActive || geminiSession) {
         console.log("Gemini session already active, ignoring start request");
@@ -110,22 +110,25 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
         if (language === "en") {
           systemInstruction = `You are a helpful podcast co-host assistant. 
   You help the podcast host with questions during recording.
-  You have access to web search to find current information.
-  IMPORTANT: When you have searched for information online, start your response with "I found online" or "According to my research" - so the host knows the information is current.
+  You have access to web search, but ONLY use it when the host explicitly asks you to search, research, look up, or check online. Keywords: "search", "look up", "check online", "research", "google it".
+  If the host asks a question you can answer from the transcript or your own knowledge, answer directly WITHOUT searching.
+  ONLY when you actually performed a web search, mention it briefly: "I looked that up" or "According to my search". NEVER say this if you didn't actually search.
   Keep your answers short and concise (maximum 2-3 sentences).`;
         } else if (language === "gsw") {
           systemInstruction = `Du bist ein hilfreicher Podcast Co-Host Assistent. 
   WICHTIG: Du sprichst Schweizerdeutsch (Züritüütsch/Dialekt). Verwende echten Schweizer Dialekt in deinen Antworten.
   Du hilfst dem Podcast-Host bei Fragen während der Aufnahme.
-  Du hast Zugriff auf Web-Suche um aktuelle Informationen zu finden.
-  WICHTIG: Wenn du Informationen aus dem Internet geholt hast, beginne deine Antwort mit "Ich han im Internet gluegt" oder "Lut minere Recherche" - so weiss der Host, dass die Information aktuell ist.
+  Du hast Zugriff auf Web-Suche, aber nutze sie NUR wenn der Host dich explizit bittet zu suchen. Schlüsselwörter: "recherchier", "schau im Internet", "check im Netz", "google", "such mal".
+  Wenn du eine Frage aus dem Transkript oder deinem Wissen beantworten kannst, antworte direkt OHNE Websuche.
+  NUR wenn du tatsächlich eine Websuche durchgeführt hast, erwähne es kurz: "Ich han das nachegluegt". Sag das NIEMALS wenn du nicht wirklich gesucht hast.
   Halte deine Antworten kurz und präzise (maximal 2-3 Sätze).`;
         } else {
           systemInstruction = `Du bist ein hilfreicher Podcast Co-Host Assistent. 
-  WICHTIG: Du sprichst IMMER Hochdeutsch mit Schweizer Rechtschreibung (kein ß, stattdessen ss). Kein Dialekt, nur Standarddeutsch.
+  WICHTIG: Du sprichst IMMER klares, angenehmes Hochdeutsch — wie eine eloquente Professorin. Kein Schweizer Akzent, kein Dialekt, kein Schweizerdeutsch. Reines, gepflegtes Standarddeutsch mit natürlicher, warmer Intonation.
   Du hilfst dem Podcast-Host bei Fragen während der Aufnahme.
-  Du hast Zugriff auf Web-Suche um aktuelle Informationen zu finden.
-  WICHTIG: Wenn du Informationen aus dem Internet geholt hast, beginne deine Antwort mit "Ich habe im Internet nachgeschaut" oder "Laut meiner Recherche" - so weiss der Host, dass die Information aktuell ist.
+  Du hast Zugriff auf Web-Suche, aber nutze sie NUR wenn der Host dich explizit bittet zu suchen. Schlüsselwörter: "recherchier", "schau im Internet", "check im Netz", "google", "such mal", "schau mal nach".
+  Wenn du eine Frage aus dem Transkript oder deinem Wissen beantworten kannst, antworte direkt OHNE Websuche.
+  NUR wenn du tatsächlich eine Websuche durchgeführt hast, erwähne es kurz: "Ich habe das nachgeschaut". Sag das NIEMALS wenn du nicht wirklich gesucht hast.
   Halte deine Antworten kurz und präzise (maximal 2-3 Sätze).`;
         }
   
@@ -401,7 +404,7 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
         });
         
         geminiSession = await ai.live.connect({
-          model: "gemini-2.5-flash-native-audio-preview-12-2025",
+          model: modelPreference,
           config: config,
           callbacks: {
             onopen: async () => {
@@ -650,7 +653,8 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
                         lastStartConfig.systemPrompt,
                         lastStartConfig.language,
                         lastStartConfig.contextData,
-                        lastStartConfig.voicePreference
+                        lastStartConfig.voicePreference,
+                        lastStartConfig.modelPreference
                       );
                     } catch (e) {
                       console.error("[Auto-Reconnect] Failed:", e);
@@ -755,9 +759,12 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
             );
             const systemPrompt = typeof data.systemPrompt === "string" ? data.systemPrompt : undefined;
             const language = typeof data.language === "string" && data.language.length <= 16 ? data.language : "de-CH";
-            const voicePreference = data.voicePreference === "Puck" ? "Puck" : "Kore";
-            lastStartConfig = { showId: currentShowId, systemPrompt, language, contextData, voicePreference };
-            await initGeminiLive(currentShowId, systemPrompt, language, contextData, voicePreference);
+            const VALID_VOICES = ["Kore", "Puck", "Charon", "Fenrir", "Aoede", "Leda", "Orus", "Zephyr"];
+            const voicePreference = typeof data.voicePreference === "string" && VALID_VOICES.includes(data.voicePreference) ? data.voicePreference : "Kore";
+            const VALID_MODELS = ["gemini-3.1-flash-live-preview", "gemini-2.5-flash-native-audio-preview-12-2025"];
+            const modelPreference = typeof data.modelPreference === "string" && VALID_MODELS.includes(data.modelPreference) ? data.modelPreference : "gemini-3.1-flash-live-preview";
+            lastStartConfig = { showId: currentShowId, systemPrompt, language, contextData, voicePreference, modelPreference };
+            await initGeminiLive(currentShowId, systemPrompt, language, contextData, voicePreference, modelPreference);
             return;
           }
           
@@ -766,11 +773,29 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
               clientWs.send(JSON.stringify({ type: "error", message: "Invalid text payload" }));
               return;
             }
-            // Send text message to Gemini
-            await geminiSession.sendClientContent({
-              turns: [{ role: "user", parts: [{ text: data.text }] }],
-              turnComplete: true
-            });
+            // Send text message to Gemini via sendRealtimeInput (required for 3.1 Flash Live)
+            // Note: sendClientContent is only for seeding initial context in 3.1, not for live interaction
+            console.log("[Co-Host] Sending text via sendRealtimeInput:", data.text.slice(0, 100));
+            try {
+              await geminiSession.sendRealtimeInput({
+                text: data.text
+              });
+              console.log("[Co-Host] Text sent successfully via sendRealtimeInput");
+            } catch (e) {
+              console.error("[Co-Host] sendRealtimeInput failed:", e);
+              // Fallback for older models (2.5): try sendClientContent
+              try {
+                console.log("[Co-Host] Falling back to sendClientContent...");
+                await geminiSession.sendClientContent({
+                  turns: [{ role: "user", parts: [{ text: data.text }] }],
+                  turnComplete: true
+                });
+                console.log("[Co-Host] Fallback sendClientContent succeeded");
+              } catch (e2) {
+                console.error("[Co-Host] Both methods failed:", e2);
+                clientWs.send(JSON.stringify({ type: "error", message: "Text-Nachricht konnte nicht verarbeitet werden" }));
+              }
+            }
             return;
           }
         // Handle audio data from JSON message

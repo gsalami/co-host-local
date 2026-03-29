@@ -489,7 +489,7 @@ export function useCoHostWebSocket() {
     streamRef.current = null;
   };
 
-  const startSession = useCallback(async (showId?: number, systemPrompt?: string, lang?: CoHostLanguage, contextData?: ContextData & { sourceIds?: number[] }, userId?: string, voicePreference?: "Kore" | "Puck"): Promise<boolean> => {
+  const startSession = useCallback(async (showId?: number, systemPrompt?: string, lang?: CoHostLanguage, contextData?: ContextData & { sourceIds?: number[] }, userId?: string, voicePreference?: string, modelPreference?: string): Promise<boolean> => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.error("WebSocket not connected");
       eventCallbackRef.current?.({ type: "error", message: "WebSocket not connected" });
@@ -518,7 +518,7 @@ export function useCoHostWebSocket() {
     const contextPayload = contextData ? JSON.stringify(contextData) : "";
     const LARGE_CONTEXT_THRESHOLD = 50 * 1024; // 50KB
     
-    const payload: Record<string, unknown> = { type: "start", showId, systemPrompt, language: selectedLanguage, userId, voicePreference };
+    const payload: Record<string, unknown> = { type: "start", showId, systemPrompt, language: selectedLanguage, userId, voicePreference, modelPreference };
     
     if (contextPayload.length > LARGE_CONTEXT_THRESHOLD) {
       // Upload large context via HTTP first

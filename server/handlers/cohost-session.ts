@@ -56,6 +56,9 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
     let keepAliveInterval: NodeJS.Timeout | null = null; // Keep-alive ping to prevent Gemini timeout
     let lastStartConfig: { showId: number | null; systemPrompt?: string; language: string; contextData?: any; voicePreference: string; modelPreference: string } | null = null; // Store config for auto-reconnect
     
+    // Transcript buffer: collect live transcripts and inject them before the next user question
+    let transcriptBuffer: string[] = [];
+    
     // Gemini outputs audio at 24kHz, 16-bit PCM, mono = 48000 bytes/second
     const GEMINI_SAMPLE_RATE = 24000;
     const GEMINI_BYTES_PER_SAMPLE = 2; // 16-bit
@@ -111,7 +114,7 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
           systemInstruction = `You are a helpful podcast co-host assistant. 
   You help the podcast host with questions during recording.
   
-  CONTEXT SYSTEM: You will receive ongoing text messages prefixed with "[Live-Transkript". These are automatic transcriptions of the podcast conversation. NEVER respond to these transcript messages! Silently remember the content as context, but ONLY respond when the host directly speaks to you or sends a text question.
+  CONTEXT SYSTEM: When you receive a message starting with "[Kontext", it contains an automatic summary of the recent podcast conversation. Use this information to answer the host's question in the right context.
   
   You have access to web search, but ONLY use it when the host explicitly asks you to search, research, look up, or check online. Keywords: "search", "look up", "check online", "research", "google it".
   If the host asks a question you can answer from the transcript or your own knowledge, answer directly WITHOUT searching.
@@ -122,18 +125,18 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
   WICHTIG: Du sprichst Schweizerdeutsch (Züritüütsch/Dialekt). Verwende echten Schweizer Dialekt in deinen Antworten.
   Du hilfst dem Podcast-Host bei Fragen während der Aufnahme.
   
-  KONTEXT-SYSTEM: Du erhältst laufend Textnachrichten mit dem Prefix "[Live-Transkript". Das sind automatische Transkriptionen des Podcast-Gesprächs. ANTWORTE NIEMALS auf diese Transkript-Nachrichten! Merke dir den Inhalt still als Kontext, aber reagiere NUR wenn der Host dich direkt per Sprache oder Text anspricht.
+  KONTEXT-SYSTEM: Wenn du e Nachricht überchunnsch wo mit "[Kontext" aafangt, isch das e automatischi Zämefassig vom bisherige Podcast-Gspröch. Nutz die Information zum d'Frag vom Host im richtige Kontext z'beantworte.
   
-  Du hast Zugriff auf Web-Suche, aber nutze sie NUR wenn der Host dich explizit bittet zu suchen. Schlüsselwörter: "recherchier", "schau im Internet", "check im Netz", "google", "such mal".
-  Wenn du eine Frage aus dem Transkript oder deinem Wissen beantworten kannst, antworte direkt OHNE Websuche.
-  NUR wenn du tatsächlich eine Websuche durchgeführt hast, erwähne es kurz: "Ich han das nachegluegt". Sag das NIEMALS wenn du nicht wirklich gesucht hast.
-  Halte deine Antworten kurz und präzise (maximal 2-3 Sätze).`;
+  Du hesch Zuegriff uf Web-Suechi, aber nutz sie NUR wenn de Host dich explizit bittet z'sueche. Schlüsselwörter: "recherchier", "schau im Internet", "check im Netz", "google", "such mal".
+  Wenn du e Frag us em Transkript oder dim Wüsse chasch beantworte, antworte direkt OHNI Websuechi.
+  NUR wenn du tatsächlich e Websuechi dureegfüehrt hesch, erwähn es churz: "Ich han das nachegluegt". Sag das NIEMALS wenn du nöd würkli gsuecht hesch.
+  Halt dini Antworte churz und präzis (maximal 2-3 Sätz).`;
         } else {
           systemInstruction = `Du bist ein hilfreicher Podcast Co-Host Assistent. 
   WICHTIG: Du sprichst IMMER klares, angenehmes Hochdeutsch — wie eine eloquente Professorin. Kein Schweizer Akzent, kein Dialekt, kein Schweizerdeutsch. Reines, gepflegtes Standarddeutsch mit natürlicher, warmer Intonation.
   Du hilfst dem Podcast-Host bei Fragen während der Aufnahme.
   
-  KONTEXT-SYSTEM: Du erhältst laufend Textnachrichten mit dem Prefix "[Live-Transkript". Das sind automatische Transkriptionen des Podcast-Gesprächs. ANTWORTE NIEMALS auf diese Transkript-Nachrichten! Merke dir den Inhalt still als Kontext, aber reagiere NUR wenn der Host dich direkt per Sprache oder Text anspricht.
+  KONTEXT-SYSTEM: Wenn du eine Nachricht erhältst die mit "[Kontext" beginnt, ist das eine automatische Zusammenfassung des bisherigen Podcast-Gesprächs. Nutze diese Information um die Frage des Hosts im richtigen Kontext zu beantworten.
   
   Du hast Zugriff auf Web-Suche, aber nutze sie NUR wenn der Host dich explizit bittet zu suchen. Schlüsselwörter: "recherchier", "schau im Internet", "check im Netz", "google", "such mal", "schau mal nach".
   Wenn du eine Frage aus dem Transkript oder deinem Wissen beantworten kannst, antworte direkt OHNE Websuche.
@@ -435,14 +438,17 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
                           speakerLabel = mapping?.displayName || `Sprecher ${speaker}`;
                         }
                         
-                        // Use sendRealtimeInput for 3.1 Flash Live (sendClientContent is only for initial context seeding)
-                        await session.sendRealtimeInput({
-                          text: `[Live-Transkript - ${speakerLabel}]: "${text}"`
-                        });
-                        console.log("Sent transcript context to Gemini via sendRealtimeInput:", speakerLabel);
+                        // Buffer transcript instead of sending directly to avoid Gemini responding to it
+                        // Buffer is flushed as context prefix when the user asks a question
+                        transcriptBuffer.push(`[${speakerLabel}]: ${text}`);
+                        // Keep buffer reasonable (last 50 segments)
+                        if (transcriptBuffer.length > 50) {
+                          transcriptBuffer = transcriptBuffer.slice(-50);
+                        }
+                        console.log("Buffered transcript context:", speakerLabel, `(${transcriptBuffer.length} segments)`);
                       }
                     } catch (e) {
-                      console.error("Error sending transcript to Gemini:", e);
+                      console.error("Error buffering transcript:", e);
                     }
                   }
                 });
@@ -779,28 +785,25 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
               clientWs.send(JSON.stringify({ type: "error", message: "Invalid text payload" }));
               return;
             }
-            // Send text message to Gemini via sendRealtimeInput (required for 3.1 Flash Live)
-            // Note: sendClientContent is only for seeding initial context in 3.1, not for live interaction
-            console.log("[Co-Host] Sending text via sendRealtimeInput:", data.text.slice(0, 100));
+            // Prepend buffered transcript context to the question
+            let messageToSend = data.text;
+            if (transcriptBuffer.length > 0) {
+              const context = transcriptBuffer.join("\n");
+              messageToSend = `[Kontext - was zuletzt im Podcast gesagt wurde]:\n${context}\n\n[Frage vom Host]: ${data.text}`;
+              console.log(`[Co-Host] Injecting ${transcriptBuffer.length} transcript segments as context`);
+              transcriptBuffer = []; // Clear buffer after injection
+            }
+            
+            // Send via sendRealtimeInput (required for 3.1 Flash Live)
+            console.log("[Co-Host] Sending text via sendRealtimeInput:", messageToSend.slice(0, 150));
             try {
               await geminiSession.sendRealtimeInput({
-                text: data.text
+                text: messageToSend
               });
               console.log("[Co-Host] Text sent successfully via sendRealtimeInput");
             } catch (e) {
               console.error("[Co-Host] sendRealtimeInput failed:", e);
-              // Fallback for older models (2.5): try sendClientContent
-              try {
-                console.log("[Co-Host] Falling back to sendClientContent...");
-                await geminiSession.sendClientContent({
-                  turns: [{ role: "user", parts: [{ text: data.text }] }],
-                  turnComplete: true
-                });
-                console.log("[Co-Host] Fallback sendClientContent succeeded");
-              } catch (e2) {
-                console.error("[Co-Host] Both methods failed:", e2);
-                clientWs.send(JSON.stringify({ type: "error", message: "Text-Nachricht konnte nicht verarbeitet werden" }));
-              }
+              clientWs.send(JSON.stringify({ type: "error", message: "Text-Nachricht konnte nicht verarbeitet werden" }));
             }
             return;
           }

@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import VoiceAgent from "@/pages/VoiceAgent";
 import CoHost from "@/pages/CoHost";
+import CombinedMode from "@/pages/CombinedMode";
 import Sources from "@/pages/Sources";
 import Shows from "@/pages/Shows";
 import UsageDashboard from "@/pages/UsageDashboard";
@@ -19,7 +20,7 @@ import Help from "@/pages/Help";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import kubleLogo from "./assets/kuble-logo.png";
-import { Radio, Mic, FileText, BarChart2, List, ShieldCheck, Menu, HelpCircle } from "lucide-react";
+import { Radio, Mic, FileText, BarChart2, List, ShieldCheck, Menu, HelpCircle, RadioTower } from "lucide-react";
 import { useState, useEffect } from "react";
 
 function Header() {
@@ -37,6 +38,7 @@ function Header() {
   const navItems = [
     { path: "/", label: "Aufnahme", icon: Radio },
     { path: "/cohost", label: "Co-Host", icon: Mic },
+    { path: "/combined", label: "Co-Host & Aufnahme", icon: RadioTower },
     { path: "/sources", label: "Quellen", icon: FileText },
     { path: "/shows", label: "Sendungen", icon: List },
     { path: "/usage", label: "Nutzung", icon: BarChart2 },
@@ -181,6 +183,7 @@ function AuthenticatedRouter() {
         <Switch>
           <Route path="/" component={VoiceAgent} />
           <Route path="/cohost" component={CoHost} />
+          <Route path="/combined" component={CombinedMode} />
           <Route path="/sources" component={Sources} />
           <Route path="/shows" component={Shows} />
           <Route path="/usage" component={UsageDashboard} />

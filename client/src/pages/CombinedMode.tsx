@@ -333,6 +333,24 @@ export default function CombinedMode() {
     }
   };
 
+  // Build transcript context from timeline for injection
+  const getRecentTranscriptContext = (): string => {
+    const transcriptEntries = timeline
+      .filter(e => e.type === "transcript")
+      .slice(-30); // Last 30 segments
+    if (transcriptEntries.length === 0 && !partialTranscript) return "";
+    
+    const lines = transcriptEntries.map(e => {
+      const speaker = e.speaker !== null && e.speaker !== undefined ? `[Sprecher ${e.speaker + 1}]` : "";
+      return `${speaker} ${e.text}`.trim();
+    });
+    // Include current partial if available
+    if (partialTranscript) {
+      lines.push(partialTranscript);
+    }
+    return lines.join("\n");
+  };
+
   // PTT press handlers
   const usingTouchRef = useRef(false);
 
@@ -358,9 +376,17 @@ export default function CombinedMode() {
       stt.stopRecording();
     }
 
-    // Start CoHost recording
+    // Send transcript context BEFORE starting voice recording
+    const context = getRecentTranscriptContext();
+    if (context) {
+      cohost.sendText(`[Kontext - was zuletzt im Podcast gesagt wurde, antworte NICHT darauf, warte auf meine Sprachfrage]:\n${context}`);
+    }
+
+    // Start CoHost recording (small delay to let context arrive first)
     setCombinedState("ASKING");
-    cohost.startRecording();
+    setTimeout(() => {
+      cohost.startRecording();
+    }, 100);
   };
 
   const handlePTTEnd = (e?: React.MouseEvent | React.TouchEvent) => {
@@ -397,7 +423,12 @@ export default function CombinedMode() {
     }
 
     setCombinedState("ANSWERING");
-    cohost.sendText(textInput);
+    // Prepend transcript context to the text question
+    const context = getRecentTranscriptContext();
+    const messageToSend = context 
+      ? `[Kontext - was zuletzt im Podcast gesagt wurde]:\n${context}\n\n[Frage vom Host]: ${textInput}`
+      : textInput;
+    cohost.sendText(messageToSend);
     setTextInput("");
   };
 

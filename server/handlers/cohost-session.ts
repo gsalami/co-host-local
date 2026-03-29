@@ -426,14 +426,11 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
                           speakerLabel = mapping?.displayName || `Sprecher ${speaker}`;
                         }
                         
-                        await session.sendClientContent({
-                          turns: [{ 
-                            role: "user", 
-                            parts: [{ text: `[Live-Transkript - ${speakerLabel}]: "${text}"` }] 
-                          }],
-                          turnComplete: false
+                        // Use sendRealtimeInput for 3.1 Flash Live (sendClientContent is only for initial context seeding)
+                        await session.sendRealtimeInput({
+                          text: `[Live-Transkript - ${speakerLabel}]: "${text}"`
                         });
-                        console.log("Sent transcript context to Gemini:", speakerLabel);
+                        console.log("Sent transcript context to Gemini via sendRealtimeInput:", speakerLabel);
                       }
                     } catch (e) {
                       console.error("Error sending transcript to Gemini:", e);

@@ -152,6 +152,26 @@ export default function CombinedMode() {
     }
   };
 
+  // Load existing transcript segments when show changes
+  const fetchExistingTranscripts = async (showId: number) => {
+    try {
+      const res = await fetch(apiUrl(`/api/transcripts/recent?limit=3000&showId=${showId}`));
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const existingEntries: TimelineEntry[] = data.map((seg: any, i: number) => ({
+          id: seg.id || i,
+          type: "transcript" as const,
+          text: seg.text,
+          speaker: seg.speaker ?? null,
+          timestamp: new Date(seg.timestamp || seg.createdAt || Date.now()),
+        }));
+        setTimeline(existingEntries);
+      }
+    } catch (error) {
+      console.error("Error fetching existing transcripts:", error);
+    }
+  };
+
   // STT transcript handler
   useEffect(() => {
     stt.onTranscript((event: TranscriptEvent) => {
@@ -265,7 +285,7 @@ export default function CombinedMode() {
     if (!currentShow) return;
     setIsStarting(true);
     setSessionActive(true);
-    setTimeline([]);
+    // Don't clear timeline — keep existing transcripts loaded
 
     // Start CoHost session (Gemini) first
     cohost.startSession(
@@ -379,6 +399,10 @@ export default function CombinedMode() {
     if (sessionActive) handleStopSession();
     setCurrentShow(show);
     setTimeline([]);
+    // Load existing transcripts for this show
+    if (show) {
+      fetchExistingTranscripts(show.id);
+    }
   };
 
   const handleCreateShow = async () => {

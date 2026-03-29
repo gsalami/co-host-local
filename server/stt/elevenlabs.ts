@@ -5,7 +5,7 @@ const ELEVENLABS_WS_URL = "wss://api.elevenlabs.io/v1/speech-to-text/realtime";
 const DEFAULT_MODEL_ID = "scribe_v2_realtime";
 const DEFAULT_SAMPLE_RATE = 16000;
 const DEFAULT_AUDIO_FORMAT = "pcm_16000";
-const COMMIT_INTERVAL_MS = 20000;
+const COMMIT_INTERVAL_MS = 3000; // Commit every 3s for faster final transcripts
 
 type ElevenLabsWord = {
   text?: string;

@@ -809,6 +809,18 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
             }
             return;
           }
+          
+          // Handle context injection (no Gemini response triggered, stored in buffer)
+          if (data.type === "context" && geminiSession && sessionActive) {
+            if (typeof data.text !== "string" || data.text.length > MAX_TEXT_MESSAGE_LENGTH * 4) {
+              return; // Silently ignore oversized context
+            }
+            // Replace buffer with fresh context from client
+            transcriptBuffer = data.text.split("\n").filter((l: string) => l.trim());
+            console.log(`[Co-Host] Context buffer updated from client: ${transcriptBuffer.length} lines`);
+            return;
+          }
+          
         // Handle audio data from JSON message
         if (data.type === "audio" && data.data && geminiSession && sessionActive) {
           if (typeof data.data !== "string" || data.data.length > MAX_AUDIO_BASE64_LENGTH) {

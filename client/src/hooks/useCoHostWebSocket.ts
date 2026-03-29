@@ -709,6 +709,12 @@ export function useCoHostWebSocket() {
     wsRef.current.send(JSON.stringify({ type: "text", text }));
   }, [isReady]);
 
+  // Send context without triggering a response (stored in server buffer for next question)
+  const sendContext = useCallback((text: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || !isReady) return;
+    wsRef.current.send(JSON.stringify({ type: "context", text }));
+  }, [isReady]);
+
   // Interrupt the current response and clear audio queue
   const interrupt = useCallback(() => {
     console.log("Interrupting Co-Host response");
@@ -799,6 +805,7 @@ export function useCoHostWebSocket() {
     startRecording,
     stopRecording,
     sendText,
+    sendContext,
     interrupt,
     toggleMute,
     onEvent,

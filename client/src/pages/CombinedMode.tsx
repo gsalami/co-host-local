@@ -376,17 +376,15 @@ export default function CombinedMode() {
       stt.stopRecording();
     }
 
-    // Send transcript context BEFORE starting voice recording
+    // Send transcript context to server buffer (does NOT trigger Gemini response)
     const context = getRecentTranscriptContext();
     if (context) {
-      cohost.sendText(`[Kontext - was zuletzt im Podcast gesagt wurde, antworte NICHT darauf, warte auf meine Sprachfrage]:\n${context}`);
+      cohost.sendContext(context);
     }
 
-    // Start CoHost recording (small delay to let context arrive first)
+    // Start CoHost recording immediately
     setCombinedState("ASKING");
-    setTimeout(() => {
-      cohost.startRecording();
-    }, 100);
+    cohost.startRecording();
   };
 
   const handlePTTEnd = (e?: React.MouseEvent | React.TouchEvent) => {

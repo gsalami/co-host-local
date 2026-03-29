@@ -124,7 +124,7 @@ export default function CombinedMode() {
     if (scrollAnchorRef.current) {
       scrollAnchorRef.current.scrollIntoView({ behavior: "auto", block: "end" });
     }
-  }, [timeline, partialAssistantText, partialUserText]);
+  }, [timeline, partialAssistantText, partialUserText, partialTranscript]);
 
   // Fetch shows and prompts
   useEffect(() => {
@@ -173,6 +173,9 @@ export default function CombinedMode() {
   };
 
   // STT transcript handler
+  const [partialTranscript, setPartialTranscript] = useState("");
+  const [partialSpeaker, setPartialSpeaker] = useState<number | null>(null);
+  
   useEffect(() => {
     stt.onTranscript((event: TranscriptEvent) => {
       if (event.type === "transcript.final") {
@@ -183,6 +186,11 @@ export default function CombinedMode() {
           speaker: event.speaker,
           timestamp: new Date(),
         }]);
+        setPartialTranscript("");
+        setPartialSpeaker(null);
+      } else if (event.type === "transcript.partial") {
+        setPartialTranscript(event.text);
+        setPartialSpeaker(event.speaker);
       }
     });
   }, []);
@@ -876,7 +884,21 @@ export default function CombinedMode() {
                     </motion.div>
                   )}
 
-                  {timeline.length === 0 && !partialUserText && !partialAssistantText && (
+                  {/* Partial STT transcript (typing indicator) */}
+                  {partialTranscript && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} className="px-4 py-2">
+                      <div className="flex items-start gap-2">
+                        {partialSpeaker !== null && (
+                          <span className={`text-xs font-medium mt-0.5 ${SPEAKER_COLORS[partialSpeaker % SPEAKER_COLORS.length]}`}>
+                            [Sprecher {partialSpeaker + 1}]
+                          </span>
+                        )}
+                        <p className="text-sm text-muted-foreground italic">{partialTranscript}<span className="inline-block w-1.5 h-3 bg-muted-foreground/50 ml-0.5 align-middle animate-pulse" /></p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {timeline.length === 0 && !partialUserText && !partialAssistantText && !partialTranscript && (
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 py-20">
                       <RadioTower className="size-12 mb-4 opacity-30" />
                       <p className="text-center text-sm">

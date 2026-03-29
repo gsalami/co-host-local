@@ -58,6 +58,7 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
     
     // Transcript buffer: collect live transcripts and inject them before the next user question
     let transcriptBuffer: string[] = [];
+    let transcriptBufferFlushed = false; // Flag to flush buffer once per PTT session
     
     // Gemini outputs audio at 24kHz, 16-bit PCM, mono = 48000 bytes/second
     const GEMINI_SAMPLE_RATE = 24000;
@@ -619,6 +620,7 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
               if (message.serverContent?.turnComplete) {
                 turnCounter++; // Increment for next turn
                 isInterrupted = false; // Clear interrupted state
+                transcriptBufferFlushed = false; // Reset for next PTT session
                 clientWs.send(JSON.stringify({ type: "cohost.turn_complete", turnId: turnCounter }));
               }
             },
@@ -813,6 +815,22 @@ export function createCoHostSessionHandler(deps: CoHostSessionDeps) {
             console.warn("Dropping oversized audio payload");
             return;
           }
+          
+          // Flush transcript buffer as context before first audio chunk (PTT start)
+          if (!transcriptBufferFlushed && transcriptBuffer.length > 0) {
+            transcriptBufferFlushed = true;
+            const context = transcriptBuffer.join("\n");
+            console.log(`[Co-Host] Flushing ${transcriptBuffer.length} transcript segments as context before voice question`);
+            try {
+              await geminiSession.sendRealtimeInput({
+                text: `[Kontext - was zuletzt im Podcast gesagt wurde, antworte NICHT darauf, warte auf meine Sprachfrage]:\n${context}`
+              });
+            } catch (e) {
+              console.error("[Co-Host] Failed to flush transcript buffer:", e);
+            }
+            transcriptBuffer = [];
+          }
+          
           // Track voice_in duration from audio chunk size
           // Input audio: 16kHz, 16-bit PCM, mono = 32000 bytes/second
           const INPUT_BYTES_PER_SECOND = 16000 * 2 * 1;

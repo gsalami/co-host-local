@@ -121,11 +121,21 @@ export default function CombinedMode() {
     combinedStateRef.current = combinedState;
   }, [combinedState]);
 
-  // Auto-scroll
+  // Auto-scroll to bottom
   useEffect(() => {
-    if (scrollAnchorRef.current) {
-      scrollAnchorRef.current.scrollIntoView({ behavior: "auto", block: "end" });
-    }
+    // Use requestAnimationFrame to ensure DOM is updated before scrolling
+    requestAnimationFrame(() => {
+      if (scrollAnchorRef.current) {
+        scrollAnchorRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+      // Also scroll the parent ScrollArea viewport
+      if (scrollRef.current) {
+        const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+      }
+    });
   }, [timeline, partialAssistantText, partialUserText, partialTranscript]);
 
   // Fetch shows and prompts
@@ -351,52 +361,38 @@ export default function CombinedMode() {
     return lines.join("\n");
   };
 
-  // PTT press handlers
-  const usingTouchRef = useRef(false);
-
-  const handlePTTStart = (e: React.MouseEvent | React.TouchEvent) => {
-    if (e.type.startsWith('mouse') && usingTouchRef.current) return;
-    if (e.type.startsWith('touch')) {
-      usingTouchRef.current = true;
-      e.preventDefault();
-    }
-
+  // PTT toggle handler (click on / click off — mobile friendly)
+  const handlePTTToggle = () => {
     if (!cohost.isReady) return;
 
-    // If AI is speaking, interrupt it
-    if (cohost.isSpeaking) {
-      cohost.interrupt();
-    }
-
-    // Remember if STT was active
-    sttWasRecordingRef.current = combinedStateRef.current === "TRANSCRIBING";
-
-    // Stop STT
-    if (stt.isRecording) {
-      stt.stopRecording();
-    }
-
-    // Send transcript context to server buffer (does NOT trigger Gemini response)
-    const context = getRecentTranscriptContext();
-    if (context) {
-      cohost.sendContext(context);
-    }
-
-    // Start CoHost recording immediately
-    setCombinedState("ASKING");
-    cohost.startRecording();
-  };
-
-  const handlePTTEnd = (e?: React.MouseEvent | React.TouchEvent) => {
-    if (e && e.type.startsWith('mouse') && usingTouchRef.current) return;
-
     if (combinedStateRef.current === "ASKING") {
+      // STOP asking — send audio end, wait for response
       cohost.stopRecording();
       setCombinedState("ANSWERING");
-    }
+    } else {
+      // START asking
+      // If AI is speaking, interrupt it
+      if (cohost.isSpeaking) {
+        cohost.interrupt();
+      }
 
-    if (e?.type.startsWith('touch')) {
-      setTimeout(() => { usingTouchRef.current = false; }, 100);
+      // Remember if STT was active
+      sttWasRecordingRef.current = combinedStateRef.current === "TRANSCRIBING";
+
+      // Stop STT
+      if (stt.isRecording) {
+        stt.stopRecording();
+      }
+
+      // Send transcript context to server buffer (does NOT trigger Gemini response)
+      const context = getRecentTranscriptContext();
+      if (context) {
+        cohost.sendContext(context);
+      }
+
+      // Start CoHost recording
+      setCombinedState("ASKING");
+      cohost.startRecording();
     }
   };
 
@@ -930,7 +926,7 @@ export default function CombinedMode() {
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 py-20">
                       <RadioTower className="size-12 mb-4 opacity-30" />
                       <p className="text-center text-sm">
-                        🎙️ = Aufnahme starten/stoppen &nbsp; 💬 = Gedrückt halten zum Fragen
+                        🎙️ = Aufnahme &nbsp; 💬 = Frage an Co-Host (klick an/aus)
                       </p>
                     </div>
                   )}
@@ -976,27 +972,22 @@ export default function CombinedMode() {
                 {combinedState === "TRANSCRIBING" ? <MicOff className="size-4 sm:size-5" /> : <Mic className="size-4 sm:size-5" />}
               </Button>
 
-              {/* PTT button (CoHost) - hold to ask */}
+              {/* PTT button (CoHost) - click on / click off */}
               <Button
                 size="lg"
                 variant={combinedState === "ASKING" ? "default" : "secondary"}
-                className={`rounded-full size-11 sm:size-14 p-0 shrink-0 shadow-lg transition-all duration-300 select-none touch-none ${
+                className={`rounded-full size-11 sm:size-14 p-0 shrink-0 shadow-lg transition-all duration-300 ${
                   combinedState === "ASKING"
-                    ? 'scale-110 shadow-accent/30 bg-accent text-accent-foreground ring-2 ring-accent/50'
+                    ? 'scale-110 shadow-accent/30 bg-accent text-accent-foreground ring-2 ring-accent/50 animate-pulse'
                     : combinedState === "ANSWERING"
                       ? 'animate-pulse shadow-accent/20'
                       : 'hover:scale-105 shadow-accent/10'
                 }`}
-                onMouseDown={handlePTTStart}
-                onMouseUp={handlePTTEnd}
-                onMouseLeave={(e) => combinedState === "ASKING" && handlePTTEnd(e)}
-                onTouchStart={handlePTTStart}
-                onTouchEnd={handlePTTEnd}
-                onTouchCancel={handlePTTEnd}
-                disabled={!cohost.isReady}
-                title="Gedrückt halten zum Fragen"
+                onClick={handlePTTToggle}
+                disabled={!cohost.isReady || combinedState === "ANSWERING"}
+                title={combinedState === "ASKING" ? "Frage absenden" : "Frage stellen"}
               >
-                <MessageCircle className="size-4 sm:size-5" />
+                {combinedState === "ASKING" ? <Send className="size-4 sm:size-5" /> : <MessageCircle className="size-4 sm:size-5" />}
               </Button>
 
               {/* Mute button */}

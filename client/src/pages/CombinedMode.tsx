@@ -267,7 +267,7 @@ export default function CombinedMode() {
     setSessionActive(true);
     setTimeline([]);
 
-    // Start CoHost session
+    // Start CoHost session (Gemini) first
     cohost.startSession(
       currentShow.id,
       systemPrompt || undefined,
@@ -277,6 +277,11 @@ export default function CombinedMode() {
       voicePreference,
       modelPreference
     );
+
+    // Start STT recording immediately (don't wait for Gemini — transcript forwarding starts once Gemini is ready)
+    stt.startRecording("microphone", currentShow.id, stt.language);
+    setCombinedState("TRANSCRIBING");
+    sttWasRecordingRef.current = true;
   };
 
   // Stop combined session
@@ -294,7 +299,7 @@ export default function CombinedMode() {
       stt.stopRecording();
       setCombinedState("IDLE");
       sttWasRecordingRef.current = false;
-    } else if (combinedState === "IDLE" && cohost.isReady) {
+    } else if (combinedState === "IDLE") {
       stt.startRecording("microphone", currentShow?.id, stt.language);
       setCombinedState("TRANSCRIBING");
       sttWasRecordingRef.current = true;
@@ -851,7 +856,7 @@ export default function CombinedMode() {
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground/50 py-20">
                       <RadioTower className="size-12 mb-4 opacity-30" />
                       <p className="text-center text-sm">
-                        Klicke auf Record für Transkription, halte PTT für Co-Host
+                        🎙️ = Aufnahme starten/stoppen &nbsp; 💬 = Gedrückt halten zum Fragen
                       </p>
                     </div>
                   )}
@@ -890,20 +895,20 @@ export default function CombinedMode() {
                     : 'hover:scale-105'
                 }`}
                 onClick={handleToggleRecord}
-                disabled={!cohost.isReady || combinedState === "ASKING" || combinedState === "ANSWERING"}
+                disabled={combinedState === "ASKING" || combinedState === "ANSWERING"}
                 title={combinedState === "TRANSCRIBING" ? "Aufnahme stoppen" : "Aufnahme starten"}
               >
                 {combinedState === "TRANSCRIBING" ? <MicOff className="size-5" /> : <Mic className="size-5" />}
               </Button>
 
-              {/* PTT button (CoHost) */}
+              {/* PTT button (CoHost) - hold to ask */}
               <Button
                 size="lg"
                 variant={combinedState === "ASKING" ? "default" : "secondary"}
                 className={`rounded-full size-14 p-0 shadow-lg transition-all duration-300 select-none touch-none ${
                   combinedState === "ASKING"
                     ? 'scale-110 shadow-accent/30 bg-accent text-accent-foreground ring-2 ring-accent/50'
-                    : cohost.isSpeaking
+                    : combinedState === "ANSWERING"
                       ? 'animate-pulse shadow-accent/20'
                       : 'hover:scale-105 shadow-accent/10'
                 }`}
@@ -916,7 +921,7 @@ export default function CombinedMode() {
                 disabled={!cohost.isReady}
                 title="Gedrückt halten zum Fragen"
               >
-                <Headphones className="size-5" />
+                <MessageCircle className="size-5" />
               </Button>
 
               {/* Mute button */}

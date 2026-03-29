@@ -513,7 +513,7 @@ export default function VoiceAgent() {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 p-3 sm:p-6 overflow-hidden">
+      <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 p-2 sm:p-6 overflow-hidden">
         
         {/* Left Column: Live Transcript */}
         <div className="lg:col-span-8 flex flex-col gap-6 h-full min-h-0 relative">
@@ -534,16 +534,16 @@ export default function VoiceAgent() {
              
              <div 
                ref={scrollRef}
-               className="flex-1 overflow-y-auto p-8 space-y-6 scroll-smooth z-0"
+               className="flex-1 overflow-y-auto p-3 sm:p-8 space-y-4 sm:space-y-6 scroll-smooth z-0"
              >
-                <div className="h-[20vh]" />
+                <div className="h-[10vh] sm:h-[20vh]" />
                 
                 {transcript.map((item) => (
                   <motion.div 
                     key={item.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 0.8, y: 0 }}
-                    className="text-lg md:text-xl font-medium leading-relaxed"
+                    className="text-sm sm:text-lg md:text-xl font-medium leading-relaxed"
                     data-testid={`transcript-final-${item.id}`}
                   >
                     {item.speaker !== null && (
@@ -568,7 +568,7 @@ export default function VoiceAgent() {
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-2xl md:text-3xl font-semibold leading-relaxed font-mono"
+                    className="text-lg sm:text-2xl md:text-3xl font-semibold leading-relaxed font-mono"
                     data-testid="transcript-partial"
                   >
                     {partialSpeaker !== null && (
@@ -602,12 +602,12 @@ export default function VoiceAgent() {
                   </div>
                 )}
                 
-                <div className="h-[20vh]" />
+                <div className="h-[10vh] sm:h-[20vh]" />
              </div>
           </div>
 
           {/* Control Bar */}
-          <div className="shrink-0 glass rounded-2xl flex flex-col items-center justify-center gap-4 py-4 px-8 relative overflow-hidden border border-white/5">
+          <div className="shrink-0 glass rounded-2xl flex flex-col items-center justify-center gap-3 sm:gap-4 py-3 sm:py-4 px-3 sm:px-8 pb-6 sm:pb-4 relative overflow-hidden border border-white/5">
              {/* Waveform Visualizer Background */}
              {isRecording && (
                <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-20 pointer-events-none h-full">
@@ -623,8 +623,8 @@ export default function VoiceAgent() {
              )}
 
              {/* Audio Source & Language Selector */}
-             <div className="flex items-center gap-4 z-10">
-               <div className="flex items-center gap-2">
+             <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 z-10">
+               <div className="flex items-center gap-1 sm:gap-2">
                  {(["microphone", "tab", "both"] as AudioSource[]).map((source) => (
                    <Button
                      key={source}
@@ -649,7 +649,7 @@ export default function VoiceAgent() {
                  }}
                  disabled={isRecording}
                >
-                 <SelectTrigger className="w-[140px]" data-testid="select-stt-provider">
+                 <SelectTrigger className="w-[110px] sm:w-[140px] text-xs sm:text-sm" data-testid="select-stt-provider">
                    <SelectValue />
                  </SelectTrigger>
                  <SelectContent>
@@ -663,7 +663,7 @@ export default function VoiceAgent() {
                  onValueChange={(val) => setLanguage(val as TranscriptLanguage)}
                  disabled={isRecording}
                >
-                 <SelectTrigger className="w-[140px]" data-testid="select-language">
+                 <SelectTrigger className="w-[110px] sm:w-[140px] text-xs sm:text-sm" data-testid="select-language">
                    <SelectValue />
                  </SelectTrigger>
                  <SelectContent>
@@ -677,7 +677,7 @@ export default function VoiceAgent() {
                <Button 
                  size="lg"
                  variant={isRecording ? "destructive" : "default"}
-                 className={`rounded-full size-16 p-0 shadow-lg transition-all duration-300 ${isRecording ? 'scale-110 shadow-destructive/20' : 'hover:scale-105 shadow-primary/20'}`}
+                 className={`rounded-full size-14 sm:size-16 p-0 shadow-lg transition-all duration-300 ${isRecording ? 'scale-110 shadow-destructive/20' : 'hover:scale-105 shadow-primary/20'}`}
                  onClick={handleRecordToggle}
                  disabled={!isConnected || !currentShow}
                  title={!currentShow ? "Bitte zuerst eine Sendung auswählen" : undefined}
@@ -769,7 +769,7 @@ export default function VoiceAgent() {
         </div>
 
         {/* Right Column: Transcript Search & Context */}
-        <div className="lg:col-span-4 flex flex-col gap-6 h-full min-h-0">
+        <div className="hidden lg:flex lg:col-span-4 flex-col gap-6 h-full min-h-0">
           
           {/* Context/Memory Visualization - Full Height */}
           <Card className="flex-1 bg-black/20 border-white/5 p-4 flex flex-col gap-3">

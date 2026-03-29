@@ -658,7 +658,7 @@ export default function CombinedMode() {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 flex flex-col p-3 sm:p-6 gap-4 sm:gap-6 overflow-y-auto max-w-4xl mx-auto w-full">
+      <main className="flex-1 min-h-0 flex flex-col p-2 sm:p-6 gap-3 sm:gap-6 overflow-y-auto max-w-4xl mx-auto w-full">
 
         {/* Pre-session setup */}
         {!sessionActive && (
@@ -851,8 +851,8 @@ export default function CombinedMode() {
           <>
             {/* Timeline area */}
             <div className="flex-1 min-h-0 relative glass rounded-2xl overflow-hidden border border-white/5 flex flex-col">
-              <ScrollArea className="flex-1 p-4 sm:p-6" ref={scrollRef}>
-                <div className="space-y-3">
+              <ScrollArea className="flex-1 p-3 sm:p-6" ref={scrollRef}>
+                <div className="space-y-2 sm:space-y-3">
                   {timeline.map((entry) => (
                     <motion.div
                       key={entry.id}
@@ -940,18 +940,19 @@ export default function CombinedMode() {
             </div>
 
             {/* Controls */}
-            <div className="shrink-0 glass rounded-2xl flex items-center justify-center gap-3 py-4 px-4 sm:px-8 border border-white/5">
+            <div className="shrink-0 glass rounded-2xl flex items-center justify-center gap-2 sm:gap-3 py-3 sm:py-4 px-2 sm:px-8 pb-6 sm:pb-4 border border-white/5">
               {/* Text Input */}
-              <div className="flex-1 flex gap-2">
+              <div className="flex-1 min-w-0 flex gap-1.5 sm:gap-2">
                 <Input
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
-                  placeholder="Frage an Co-Host..."
-                  className="bg-background/50 border-white/10"
+                  placeholder="Frage..."
+                  className="bg-background/50 border-white/10 text-sm"
                   onKeyDown={(e) => e.key === 'Enter' && handleSendText()}
                 />
                 <Button
                   size="icon"
+                  className="shrink-0 size-10"
                   onClick={handleSendText}
                   disabled={!textInput.trim() || !cohost.isReady}
                 >
@@ -963,7 +964,7 @@ export default function CombinedMode() {
               <Button
                 size="lg"
                 variant={combinedState === "TRANSCRIBING" ? "destructive" : "outline"}
-                className={`rounded-full size-14 p-0 shadow-lg transition-all duration-300 ${
+                className={`rounded-full size-11 sm:size-14 p-0 shrink-0 shadow-lg transition-all duration-300 ${
                   combinedState === "TRANSCRIBING"
                     ? 'scale-110 shadow-destructive/20'
                     : 'hover:scale-105'
@@ -972,14 +973,14 @@ export default function CombinedMode() {
                 disabled={combinedState === "ASKING" || combinedState === "ANSWERING"}
                 title={combinedState === "TRANSCRIBING" ? "Aufnahme stoppen" : "Aufnahme starten"}
               >
-                {combinedState === "TRANSCRIBING" ? <MicOff className="size-5" /> : <Mic className="size-5" />}
+                {combinedState === "TRANSCRIBING" ? <MicOff className="size-4 sm:size-5" /> : <Mic className="size-4 sm:size-5" />}
               </Button>
 
               {/* PTT button (CoHost) - hold to ask */}
               <Button
                 size="lg"
                 variant={combinedState === "ASKING" ? "default" : "secondary"}
-                className={`rounded-full size-14 p-0 shadow-lg transition-all duration-300 select-none touch-none ${
+                className={`rounded-full size-11 sm:size-14 p-0 shrink-0 shadow-lg transition-all duration-300 select-none touch-none ${
                   combinedState === "ASKING"
                     ? 'scale-110 shadow-accent/30 bg-accent text-accent-foreground ring-2 ring-accent/50'
                     : combinedState === "ANSWERING"
@@ -995,14 +996,14 @@ export default function CombinedMode() {
                 disabled={!cohost.isReady}
                 title="Gedrückt halten zum Fragen"
               >
-                <MessageCircle className="size-5" />
+                <MessageCircle className="size-4 sm:size-5" />
               </Button>
 
               {/* Mute button */}
               <Button
                 size="icon"
                 variant={cohost.isMuted ? "destructive" : "outline"}
-                className="rounded-full"
+                className="rounded-full shrink-0 size-10"
                 onClick={cohost.toggleMute}
                 title={cohost.isMuted ? "Ton einschalten" : "Ton ausschalten"}
               >
@@ -1013,7 +1014,7 @@ export default function CombinedMode() {
               <Button
                 size="icon"
                 variant="outline"
-                className="rounded-full text-destructive hover:text-destructive"
+                className="rounded-full shrink-0 size-10 text-destructive hover:text-destructive"
                 onClick={handleStopSession}
                 title="Session beenden"
               >
@@ -1022,7 +1023,7 @@ export default function CombinedMode() {
             </div>
 
             {/* State hint for mobile */}
-            <div className="shrink-0 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+            <div className="shrink-0 flex items-center justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground pb-2 sm:pb-0">
               <span className="flex items-center gap-1.5">
                 <Mic className="size-3" /> Record = Transkription
               </span>

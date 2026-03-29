@@ -1033,7 +1033,7 @@ export default function CoHost() {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 flex flex-col p-3 sm:p-6 gap-4 sm:gap-6 overflow-y-auto max-w-4xl mx-auto w-full">
+      <main className="flex-1 min-h-0 flex flex-col p-2 sm:p-6 gap-3 sm:gap-6 overflow-y-auto max-w-4xl mx-auto w-full">
         
         {/* Session Start */}
         {!isReady && (
@@ -1638,7 +1638,7 @@ export default function CoHost() {
             )}
             
             <div className="flex-1 min-h-0 relative glass rounded-2xl overflow-hidden border border-white/5 flex flex-col">
-              <ScrollArea className="flex-1 p-6" ref={scrollRef}>
+              <ScrollArea className="flex-1 p-3 sm:p-6" ref={scrollRef}>
                 <div className="space-y-4">
                   {messages.map((msg) => (
                     <motion.div
@@ -1701,7 +1701,7 @@ export default function CoHost() {
             </div>
 
             {/* Quick Actions */}
-            <div className="shrink-0 flex flex-wrap gap-2 justify-center items-center">
+            <div className="shrink-0 flex flex-wrap gap-1.5 sm:gap-2 justify-center items-center px-1">
               <Button
                 variant="default"
                 size="sm"
@@ -1752,19 +1752,20 @@ export default function CoHost() {
             </div>
 
             {/* Controls */}
-            <div className="shrink-0 glass rounded-2xl flex items-center justify-center gap-4 py-4 px-8 border border-white/5">
+            <div className="shrink-0 glass rounded-2xl flex items-center justify-center gap-2 sm:gap-4 py-3 sm:py-4 px-3 sm:px-8 pb-6 sm:pb-4 border border-white/5">
               {/* Text Input */}
-              <div className="flex-1 flex gap-2">
+              <div className="flex-1 min-w-0 flex gap-2">
                 <Input
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   placeholder={UI_TRANSLATIONS[language].messagePlaceholder}
-                  className="bg-background/50 border-white/10"
+                  className="bg-background/50 border-white/10 text-sm"
                   onKeyDown={(e) => e.key === 'Enter' && handleSendText()}
                   data-testid="input-text-cohost"
                 />
                 <Button 
                   size="icon" 
+                  className="shrink-0 size-10 sm:size-10"
                   onClick={handleSendText} 
                   disabled={!textInput.trim() || !isReady}
                   data-testid="button-send-text"
@@ -1777,7 +1778,7 @@ export default function CoHost() {
               <Button 
                 size="lg"
                 variant={isRecording ? "destructive" : isSpeaking ? "secondary" : "default"}
-                className={`rounded-full size-14 p-0 shadow-lg transition-all duration-300 select-none touch-none ${
+                className={`rounded-full size-12 sm:size-14 p-0 shrink-0 shadow-lg transition-all duration-300 select-none touch-none ${
                   isRecording 
                     ? 'scale-110 shadow-destructive/20' 
                     : isSpeaking 
@@ -1800,7 +1801,7 @@ export default function CoHost() {
               <Button 
                 size="icon"
                 variant={isMuted ? "destructive" : "outline"}
-                className="rounded-full"
+                className="rounded-full shrink-0 size-10 sm:size-10"
                 onClick={toggleMute}
                 title={isMuted ? "Ton einschalten" : "Ton ausschalten"}
                 data-testid="button-mute-cohost"
